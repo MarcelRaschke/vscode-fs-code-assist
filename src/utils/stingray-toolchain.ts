@@ -87,16 +87,18 @@ export class StingrayToolchain {
 			engineArguments.push(...options.arguments);
 		}
 
-		const engineArgumentsWithQuotes = engineArguments.map((s) => {
+		const addQuotes = (s: string) => {
 			if (s.indexOf(" ") !== -1 && !s.startsWith("\"")) { 
 				return `"${s}"`;
 			} else {
 				return s;
 			}
-		});
+		};
+		const engineArgumentsWithQuotes = engineArguments.map(addQuotes);
+		const engineExeWithQuotes = addQuotes(engineExe);
 
 		const stringArguments = engineArgumentsWithQuotes.join(" ");
-		const command = `${engineExe} ${stringArguments}`;
+		const command = `${engineExeWithQuotes} ${stringArguments}`;
 		return {command, childProcess: exec(command)};
 	}
 }
