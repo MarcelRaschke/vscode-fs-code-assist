@@ -77,7 +77,7 @@ export const activate = (context: vscode.ExtensionContext) => {
 		connectionHandler.connectAllGames(port, maxConnections, target?.Ip);
 	}));
 
-	context.subscriptions.push(vscode.commands.registerCommand("toadman_code_assist.Compiler.reconnect", () => {
+	context.subscriptions.push(vscode.commands.registerCommand("toadman-code-assist.Compiler.reconnect", () => {
 		compilerErrored = false;
 	}));
 
@@ -294,7 +294,7 @@ export const activate = (context: vscode.ExtensionContext) => {
 				
 				const commandAndChildProcess = await toolchain.launch({
 					targetId: '00000000-1111-2222-3333-444444444444',
-					arguments: `--asset-server`,
+					arguments: ['--asset-server'],
 				});
 
 				const command = commandAndChildProcess.command;

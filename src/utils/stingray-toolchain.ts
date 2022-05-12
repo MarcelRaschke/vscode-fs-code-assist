@@ -10,7 +10,7 @@ type LaunchOptions = {
 	/** The UUID of the target to launch the instance on.*/
 	targetId: string;
 	/** Extra arguments to the Stingray process */
-	arguments?: string;
+	arguments?: string[];
 };
 
 /**
@@ -78,10 +78,25 @@ export class StingrayToolchain {
 		const platformDirectory = 'win64';
 
 		const engineExe = path.join(this.path, 'engine', platformDirectory, config.Build, StingrayToolchain.buildToExecutableName[config.Build]);
-		const engineArguments = `--toolchain ${this.path} ${options.arguments ?? ''} `;
+		const engineArguments = [];
+		
+		engineArguments.push('--toolchain');
+		engineArguments.push(this.path);
 
-		const command = `${engineExe} ${engineArguments}`;
+		if (options.arguments) {
+			engineArguments.push(...options.arguments);
+		}
 
+		const engineArgumentsWithQuotes = engineArguments.map((s) => {
+			if (s.indexOf(" ") !== -1 && !s.startsWith("\"")) { 
+				return `"${s}"`;
+			} else {
+				return s;
+			}
+		});
+
+		const stringArguments = engineArgumentsWithQuotes.join(" ");
+		const command = `${engineExe} ${stringArguments}`;
 		return {command, childProcess: exec(command)};
 	}
 }

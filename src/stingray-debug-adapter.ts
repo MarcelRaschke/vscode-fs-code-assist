@@ -405,9 +405,21 @@ class StingrayDebugSession extends DebugAdapter.DebugSession {
 		const timeout = args.timeout ?? 30;
 
 		const compile = args.compile ? '--compile' : '--no-compile';
+
+		const launchArguments: string[] = [];
+		launchArguments.push(compile);
+		launchArguments.push('--wait-for-debugger');
+		launchArguments.push(`${timeout}`);
+
+		const extraArgumentsSplit = args.arguments?.split(" ");
+
+		if (extraArgumentsSplit) {
+			launchArguments.push(...extraArgumentsSplit);
+		}
+
 		const commandAndChildProcess = await toolchain.launch({
 			targetId: args.targetId ?? '00000000-1111-2222-3333-444444444444',
-			arguments: `${compile} --wait-for-debugger ${timeout} ${args.arguments ?? ''}`,
+			arguments: launchArguments,
 		});
 		
 		this.sendEvent(new DebugAdapter.OutputEvent(`launching with command ${commandAndChildProcess.command}\r\n`, 'console'));
