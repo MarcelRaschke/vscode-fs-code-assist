@@ -3,7 +3,7 @@
   "displayName": "Toadman Code Assist",
   "description": "Stingray Intellisense, debugging and code browsing. A fork of Fatshark's code assist",
   "icon": "resources/toadman-code-assist.png",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "publisher": "Toadman",
   "engines": {
     "vscode": "^1.63.0"
@@ -46,6 +46,11 @@
         "title": "Scan for Instances",
         "category": "Hydra",
         "icon": "$(search)"
+      },
+      {
+        "command": "toadman-code-assist.Compiler.reconnect",
+        "title": "Reconnect the compiler if it failed to connect before.",
+        "category": "Hydra"
       },
       {
         "command": "toadman-code-assist.Connection.attachDebugger",

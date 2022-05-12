@@ -61,9 +61,9 @@ export class StingrayToolchain {
 	/**
 	 * Launch an instance of Stingray with the given toolchain.
 	 * @param options Launch options.
-	 * @returns A newly created ChildProcess.
+	 * @returns The command used to run the process and a newly created ChildProcess.
 	 */
-	async launch(options: LaunchOptions): Promise<ChildProcess> {
+	async launch(options: LaunchOptions): Promise<{command: string, childProcess: ChildProcess}> {
 		const config = await this.config();
 
 		const target = config.Targets.find((target) => target.Id === options.targetId);
@@ -79,6 +79,9 @@ export class StingrayToolchain {
 
 		const engineExe = path.join(this.path, 'engine', platformDirectory, config.Build, StingrayToolchain.buildToExecutableName[config.Build]);
 		const engineArguments = `--toolchain ${this.path} ${options.arguments ?? ''} `;
-		return exec(`${engineExe} ${engineArguments}`);
+
+		const command = `${engineExe} ${engineArguments}`;
+
+		return {command, childProcess: exec(command)};
 	}
 }
