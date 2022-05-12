@@ -3,7 +3,7 @@
   "displayName": "Toadman Code Assist",
   "description": "Stingray Intellisense, debugging and code browsing. A fork of Fatshark's code assist",
   "icon": "resources/toadman-code-assist.png",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "Toadman",
   "engines": {
     "vscode": "^1.63.0"
@@ -24,6 +24,7 @@
   "keywords": [
     "toadman",
     "stingray",
+    "hydra",
     "debugger",
     "lua",
     "sjson"
@@ -35,7 +36,7 @@
     "onUri",
     "onLanguage:lua",
     "onLanguage:sjson",
-    "onTaskType:stingray_lua"
+    "onTaskType:hydra"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -43,51 +44,51 @@
       {
         "command": "toadman-code-assist.Target.scan",
         "title": "Scan for Instances",
-        "category": "Stingray",
+        "category": "Hydra",
         "icon": "$(search)"
       },
       {
         "command": "toadman-code-assist.Connection.attachDebugger",
         "title": "Attach Debugger",
-        "category": "Stingray",
+        "category": "Hydra",
         "icon": "$(debug-alt)"
       },
       {
         "command": "toadman-code-assist.Connection.disconnect",
         "title": "Disconnect",
-        "category": "Stingray",
+        "category": "Hydra",
         "icon": "$(close)"
       },
       {
         "command": "toadman-code-assist.Connection.executeCommand",
         "title": "Execute Command",
-        "category": "Stingray"
+        "category": "Hydra"
       },
       {
         "command": "toadman-code-assist.Connection.executeLua",
         "title": "Execute Lua",
-        "category": "Stingray"
+        "category": "Hydra"
       },
       {
         "command": "toadman-code-assist.Connection.executeSelection",
         "title": "Execute Selection",
-        "category": "Stingray"
+        "category": "Hydra"
       },
       {
         "command": "toadman-code-assist.Connection.executeFile",
         "title": "Execute File",
-        "category": "Stingray"
+        "category": "Hydra"
       },
       {
         "command": "toadman-code-assist.Connection.reloadResources",
         "title": "Refresh Modified Resources",
-        "category": "Stingray",
+        "category": "Hydra",
         "icon": "$(extensions-refresh)"
       },
       {
         "command": "toadman-code-assist.flushToolcenterConfig",
         "title": "Sync Toolcenter Config",
-        "category": "Stingray",
+        "category": "Hydra",
         "icon": "$(cloud-download)"
       }
     ],
@@ -101,7 +102,7 @@
       "editor/context": [
         {
           "command": "toadman-code-assist.Connection.executeSelection",
-          "group": "Stingray",
+          "group": "Hydra",
           "when": "editorHasSelection"
         }
       ],
@@ -159,19 +160,19 @@
       "type": "object",
       "title": "Toadman Code Assist",
       "properties": {
-        "StingrayLua.toolchainPath": {
+        "Hydra.toolchainPath": {
           "type": "string",
           "scope": "window",
           "default": "",
           "description": "Toolchain root, e.g. `C:/BitSquidBinaries`\nDefaults to `%BsBinariesDir%` or `C:/BitSquidBinaries`."
         },
-        "StingrayLua.toolchainName": {
+        "Hydra.toolchainName": {
           "type": "string",
           "scope": "window",
           "default": "hydra",
           "description": "Toolchain name, e.g. `hydra`.\nDefaults to `hydra`."
         },
-        "StingrayLua.platform": {
+        "Hydra.platform": {
           "type": "string",
           "scope": "window",
           "default": "win32",
@@ -321,33 +322,44 @@
     ],
     "debuggers": [
       {
-        "type": "stingray_lua",
-        "label": "Stingray Lua",
+        "type": "hydra",
+        "label": "Hydra",
         "program": "./out/stingray-debug-adapter.js",
         "runtime": "node",
         "configurationSnippets": [
           {
-            "label": "Stingray: Launch",
+            "label": "Hydra: Launch win32",
             "description": "Launch the engine and immediately attach the debugger.",
             "body": {
-              "type": "stingray_lua",
+              "type": "hydra",
               "request": "launch",
-              "toolchain": "${config:StingrayLua.toolchainPath}/${config:StingrayLua.toolchainName}",
+              "toolchain": "^\"\\${config:Hydra.toolchainPath}/\\${config:Hydra.toolchainName}\"",
               "arguments": "",
-              "name": "${1:My Launch Configuration}"
+              "name": "${1:My Launch Configuration}",
+              "preLaunchTask": "hydra: compile for win32"
             }
           },
           {
-            "label": "Stingray: Attach",
+            "label": "Hydra: Attach",
             "description": "Attach to a running instance of the engine.",
             "body": {
-              "type": "stingray_lua",
+              "type": "hydra",
               "request": "attach",
-              "toolchain": "${config:StingrayLua.toolchainPath}/${config:StingrayLua.toolchainName}",
+              "toolchain": "^\"\\${config:Hydra.toolchainPath}/\\${config:Hydra.toolchainName}\"",
               "ip": "{3:localhost}",
               "port": "${4:14000}",
               "name": "${5:Attach to ${3}:${4}}"
             }
+          }
+        ],
+        "initialConfigurations": [
+          {
+            "type": "hydra",
+            "request": "launch",
+            "toolchain": "${config:Hydra.toolchainPath}/${config:Hydra.toolchainName}",
+            "arguments": "",
+            "name": "Default Launch",
+            "preLaunchTask": "hydra: compile for win32"
           }
         ],
         "configurationAttributes": {
@@ -371,7 +383,7 @@
               "toolchain": {
                 "type": "string",
                 "description": "The absolute path to the toolchain.",
-                "toolchain": "${config:StingrayLua.toolchainPath}/${config:StingrayLua.toolchainName}"
+                "default": "^\"\\${config:Hydra.toolchainPath}/\\${config:Hydra.toolchainName}\""
               }
             }
           },
@@ -393,7 +405,7 @@
               "toolchain": {
                 "type": "string",
                 "description": "The absolute path to the toolchain.",
-                "toolchain": "${config:StingrayLua.toolchainPath}/${config:StingrayLua.toolchainName}"
+                "default": "^\"\\${config:Hydra.toolchainPath}/\\${config:Hydra.toolchainName}\""
               },
               "detach": {
                 "type": "boolean",
@@ -407,7 +419,7 @@
     ],
     "taskDefinitions": [
       {
-        "type": "stingray_lua",
+        "type": "hydra",
         "required": [
           "platform"
         ],
@@ -449,14 +461,14 @@
     ],
     "problemPatterns": [
       {
-        "name": "stingray-build-lua-error",
+        "name": "hydra-build-lua-error",
         "regexp": "([^:]+\\.lua):(\\d+): (.*)$",
         "file": 1,
         "message": 3,
         "location": 2
       },
       {
-        "name": "stingray-build-sjson-error",
+        "name": "hydra-build-sjson-error",
         "regexp": "^([^(]+)\\((\\d+):(\\d+)\\): (.*)$",
         "file": 1,
         "message": 4,
@@ -464,14 +476,14 @@
         "column": 3
       },
       {
-        "name": "stingray-build-parse-error",
+        "name": "hydra-build-parse-error",
         "regexp": "Error compiling `([^`]+)`: Parse error '(.*?)' at line (\\d+):",
         "file": 1,
         "message": 2,
         "location": 3
       },
       {
-        "name": "stingray-build-generic-error",
+        "name": "hydra-build-generic-error",
         "regexp": "Error compiling `([^`]+)`: (.*)$",
         "file": 1,
         "message": 2,
@@ -480,10 +492,10 @@
     ],
     "problemMatchers": [
       {
-        "name": "stingray-build-lua-error",
-        "label": "Stingray Lua Errors",
-        "owner": "stingray_lua",
-        "pattern": "$stingray-build-lua-error",
+        "name": "hydra-build-lua-error",
+        "label": "Hydra Lua Errors",
+        "owner": "hydra",
+        "pattern": "$hydra-build-lua-error",
         "background": {
           "activeOnStart": false,
           "beginsPattern": "Compilation started",
@@ -491,10 +503,10 @@
         }
       },
       {
-        "name": "stingray-build-sjson-error",
-        "label": "Stingray sjson Error",
-        "owner": "stingray_lua",
-        "pattern": "$stingray-build-sjson-error",
+        "name": "hydra-build-sjson-error",
+        "label": "Hydra sjson Error",
+        "owner": "hydra",
+        "pattern": "$hydra-build-sjson-error",
         "background": {
           "activeOnStart": false,
           "beginsPattern": "Compilation started",
@@ -502,10 +514,10 @@
         }
       },
       {
-        "name": "stingray-build-parse-error",
-        "label": "Stingray Parse Error",
-        "owner": "stingray_lua",
-        "pattern": "$stingray-build-parse-error",
+        "name": "hydra-build-parse-error",
+        "label": "Hydra Parse Error",
+        "owner": "hydra",
+        "pattern": "$hydra-build-parse-error",
         "background": {
           "activeOnStart": false,
           "beginsPattern": "Compilation started",
@@ -513,10 +525,10 @@
         }
       },
       {
-        "name": "stingray-build-generic-error",
-        "label": "Stingray Generic Error",
-        "owner": "stingray_lua",
-        "pattern": "$stingray-build-generic-error",
+        "name": "hydra-build-generic-error",
+        "label": "Hydra Generic Error",
+        "owner": "hydra",
+        "pattern": "$hydra-build-generic-error",
         "background": {
           "activeOnStart": false,
           "beginsPattern": "Compilation started",

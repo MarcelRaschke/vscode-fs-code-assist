@@ -12,7 +12,7 @@ import { StingrayToolchain } from "./utils/stingray-toolchain";
 // https://github.com/microsoft/vscode-extension-samples/blob/main/task-provider-sample
 // https://github.com/microsoft/vscode/blob/main/src/vs/workbench/contrib/tasks/common/problemMatcher.ts
 
-const TASK_SOURCE = "stingray_lua";
+const TASK_SOURCE = "hydra";
 
 /** Schema for a Stingray compile task.
  * Must be kept in sync with the "taskDefinitions" in the package.json file.
@@ -173,7 +173,7 @@ class StingrayCompileTaskTerminal implements vscode.Pseudoterminal {
 
 	private onDisconnect() {
 		const compiler = this.compiler;
-		this.write("StingrayCompile", `Lost connection to ${compiler.ip}:${compiler.port}.`);
+		this.write("HydraCompile", `Lost connection to ${compiler.ip}:${compiler.port}.`);
 		this.doClose(StatusCode.Disconnect);
 	}
 
@@ -191,7 +191,7 @@ class StingrayCompileTaskTerminal implements vscode.Pseudoterminal {
 		const platform = definition.platform;
 
 		if (compiler.isClosed) {
-			this.write("StingrayCompile", `Could not connect to compile server at ${compiler.ip}:${compiler.port}.`);
+			this.write("HydraCompile", `Could not connect to compile server at ${compiler.ip}:${compiler.port}.`);
 			this.doClose(StatusCode.Disconnect);
 			return;
 		}
@@ -228,7 +228,7 @@ class StingrayCompileTaskTerminal implements vscode.Pseudoterminal {
 		}
 
 		this.compiler.sendJSON(compileMessage);
-		this.write("StingrayCompile", `Compilation requested with id ${this.id}.`);
+		this.write("HydraCompile", `Compilation requested with id ${this.id}.`);
 		this.compileInProgress = true;
 	}
 }
@@ -243,10 +243,10 @@ const createExecution = (toolchain: StingrayToolchain, definition: StingrayTaskD
 };
 
 const DEFAULT_PROBLEM_MATCHERS = [
-	"$stingray-build-lua-error",
-	"$stingray-build-parse-error",
-	"$stingray-build-sjson-error",
-	"$stingray-build-generic-error",
+	"$hydra-build-lua-error",
+	"$hydra-build-parse-error",
+	"$hydra-build-sjson-error",
+	"$hydra-build-generic-error",
 ];
 
 export const createDefaultTask = (toolchain: StingrayToolchain, platform: Platform) => {
@@ -257,7 +257,7 @@ export const createDefaultTask = (toolchain: StingrayToolchain, platform: Platfo
 	return new vscode.Task(
 		definition,
 		vscode.TaskScope.Workspace, // Should be Global, but currently not supported.
-		`stingray_lua: ${platform}`,
+		`compile for ${platform}`,
 		TASK_SOURCE,
 		createExecution(toolchain, definition),
 		DEFAULT_PROBLEM_MATCHERS

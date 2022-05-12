@@ -17,7 +17,7 @@ export const getActiveToolchain = () => {
 	if (_activeToolchain) {
 		return _activeToolchain;
 	}
-	const config = vscode.workspace.getConfiguration('StingrayLua');
+	const config = vscode.workspace.getConfiguration('Hydra');
 	const toolchainRoot: string = config.get('toolchainPath') || process.env.BsBinariesDir || 'C:/BitSquidBinaries';
 	const toolchainName: string = config.get('toolchainName') || 'vermintide2';
 	if (!toolchainRoot || !toolchainName) {
@@ -94,7 +94,7 @@ export const activate = (context: vscode.ExtensionContext) => {
 			}
 
 			const attachArgs = {
-				"type": "stingray_lua",
+				"type": "hydra",
 				"request": "attach",
 				"name": `${game.ip}:${game.port}`,
 				"ip" : ip,

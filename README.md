@@ -7,6 +7,12 @@ Available on the Visual Studio Code Marketplace: https://marketplace.visualstudi
 
 Alternatively, if you're developing it you can also clone the repo into `%UserProfile%/.vscode/extensions`.
 
+Make sure to define the toolchain path:
+![Demo](https://github.com/catdawg/fs-code-assist/blob/master/resources/settings.gif?raw=true)
+
+To launch the game with the debugger attached, you need to setup your launch.json. Here's how:
+![Demo](https://github.com/catdawg/fs-code-assist/blob/master/resources/debug.gif?raw=true)
+
 ## Features
 + **Enhanced debugger:**
   + Attaches in <100ms instead of taking ~10 seconds (x100 fold improvement).
