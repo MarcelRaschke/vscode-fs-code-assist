@@ -11,7 +11,7 @@ Make sure to define the toolchain path:
 ![Demo](https://raw.githubusercontent.com/catdawg/vscode-fs-code-assist/master/resources/settings.gif)
 
 To launch the game with the debugger attached, you need to setup your launch.json. Here's how:
-![Demo](https://raw.githubusercontent.com/catdawg/vscode-fs-code-assist/master/resources/settings.gif)
+![Demo](https://raw.githubusercontent.com/catdawg/vscode-fs-code-assist/master/resources/debug.gif)
 
 ## Features
 + **Enhanced debugger:**

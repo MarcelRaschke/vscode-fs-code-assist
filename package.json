@@ -3,7 +3,7 @@
   "displayName": "Toadman Code Assist",
   "description": "Stingray Intellisense, debugging and code browsing. A fork of Fatshark's code assist",
   "icon": "resources/toadman-code-assist.png",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "publisher": "Toadman",
   "engines": {
     "vscode": "^1.63.0"
