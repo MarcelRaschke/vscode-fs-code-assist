@@ -233,7 +233,7 @@ class AdocCompletionFeatures implements
 		if (dotIndex > -1) {
 			const object = expression.substring(0, dotIndex);
 			const method = expression.substring(dotIndex+1);
-			const command = formatCommand("fatshark-code-assist._openDocumentation", { object, method });
+			const command = formatCommand("toadman-code-assist._openDocumentation", { object, method });
 			mdString.appendMarkdown(`\n\n\n[$(link-external) Open local documentation](${command})`);
 			mdString.supportThemeIcons = true;
 			mdString.isTrusted = true;
@@ -270,7 +270,7 @@ export function activate(context: vscode.ExtensionContext) {
 	if (!toolchain) {
 		return;
 	}
-	const apiDoc = path.join(toolchain.path, 'tools_external', 'lua_api_stingray3d.json');
+	const apiDoc = path.join(toolchain.path, 'editor', 'resources', 'lua_api_stingray3d.json');
 	if (!fs.existsSync(apiDoc)) {
 		return;
 	}

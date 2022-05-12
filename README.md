@@ -1,7 +1,9 @@
-# Fatshark Code Assist
+# Toadman Code Assist
+
+This is a fork of Fatshark's code assist for use with Toadman's tools.
 
 ## Install
-Available on the Visual Studio Code Marketplace: https://marketplace.visualstudio.com/items?itemName=Fatshark.fatshark-code-assist
+Available on the Visual Studio Code Marketplace: https://marketplace.visualstudio.com/items?itemName=Toadman.toadman-code-assist
 
 Alternatively, if you're developing it you can also clone the repo into `%UserProfile%/.vscode/extensions`.
 

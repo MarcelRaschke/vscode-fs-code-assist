@@ -6,7 +6,7 @@ import * as vscode from 'vscode';
 import { StingrayConnection } from "./stingray-connection";
 import { getTimestamp } from './utils/functions';
 
-export const MAX_CONNECTIONS = 4;
+export const MAX_CONNECTIONS = 31;
 
 const IDENTIFY_TIMEOUT = 5000; // Milliseconds.
 const IDENTIFY_LUA = `
@@ -26,16 +26,10 @@ stingray.Application.console_send({
 		build_identifier = GET(Application, "build_identifier", BUILD_IDENTIFIER),
 		bundled = GET(Application, "bundled"),
 		console_port = GET(Application, "console_port"),
-		profiler_port = GET(Application, "profiler_port"),
-		is_dedicated_server = GET(Application, "is_dedicated_server"),
-		machine_id = GET(Application, "machine_id"),
-		platform = GET(Application, "platform", PLATFORM),
-		plugins = GET(Application, "all_plugin_names"),
 		process_id = GET(Application, "process_id"),
 		session_id = GET(Application, "session_id"),
-		source_platform = GET(Application, "source_platform"),
+		platform = GET(Application, "platform"),
 		time_since_launch = GET(Application, "time_since_launch"),
-		title = GET(Window, "title", "Stingray"),
 		jit = { GET(jit, "status") } ,
 	},
 })
@@ -57,8 +51,9 @@ export class ConnectionHandler {
 
 	getCompiler() {
 		if (!this._compiler || this._compiler.isClosed) {
-			this._compiler = new StingrayConnection(14032);
-			this._addOutputChannel("Stingray Compiler", this._compiler, false);
+			const compiler = new StingrayConnection(14032);
+			this._compiler = compiler;
+			this._addOutputChannel("Stingray Compiler", compiler, true);
 		}
 		return this._compiler;
 	}
@@ -66,9 +61,17 @@ export class ConnectionHandler {
 	getGame(port:number, ip?:string) {
 		let game = this._game.get(port);
 		if (!game || game.isClosed) {
-			game = new StingrayConnection(port, ip);
-			this._game.set(port, game);
-			this._addOutputChannel(`Stingray (${port})`, game);
+			const newGame = new StingrayConnection(port, ip);
+
+			this._addOutputChannel(`Stingray (${port})`, newGame, true);
+			newGame.onDidConnect.add(() => {
+				newGame.sendJSON({
+					type: 'lua_debugger',
+					command: 'continue',
+				});
+			});
+			this._game.set(port, newGame);
+			game = newGame;
 		}
 		return game;
 	}
@@ -110,12 +113,10 @@ export class ConnectionHandler {
 			}
 			this._connectionOutputs.set(connection, outputChannel);
 			this._outputsByName.set(name, outputChannel);
-			vscode.commands.executeCommand("fatshark-code-assist._refreshConnectedClients");
 		});
-		connection.onDidDisconnect.add((hadError: boolean) => {
+		connection.onDidDisconnect.add(() => {
 			this._connectionOutputs.delete(connection);
 			this._identifyInfo.delete(connection);
-			vscode.commands.executeCommand("fatshark-code-assist._refreshConnectedClients");
 		});
 		connection.onDidReceiveData.add((data:any) => {
 			if (data.type === "message") {

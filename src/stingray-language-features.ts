@@ -104,113 +104,6 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 	}));
 
-	const preprocessorDimDecoration = vscode.window.createTextEditorDecorationType({
-		opacity: "0.62",
-		//backgroundColor: backgroundColor,
-		//color: color,
-		rangeBehavior: vscode.DecorationRangeBehavior.OpenOpen
-	});
-
-	const countIndent = (text: string, tabSize: number) => {
-		let n = 0;
-		for (const char of text) {
-			if (char === ' ') {
-				++n;
-			} else if (char === '\t') {
-				n += tabSize - n % tabSize;
-			} else {
-				return n;
-			}
-		}
-		return -1;
-	};
-
-	const getFeatureTags = async () => {
-		const folder = vscode.workspace.workspaceFolders?.[0];
-		if (!folder) {
-			return;
-		}
-		const preprocessorConfigPath = vscode.Uri.joinPath(folder.uri, 'lua_preprocessor_defines.config');
-		const preprocessorConfigBuffer = await vscode.workspace.fs.readFile(preprocessorConfigPath);
-		const decoder = new TextDecoder("utf-8");
-		const preprocessorConfig = SJSON.parse(decoder.decode(preprocessorConfigBuffer));
-		return preprocessorConfig.valid_tags;
-	};
-
-	context.subscriptions.push(vscode.languages.registerFoldingRangeProvider(LANGUAGE_SELECTOR, {
-		async provideFoldingRanges(document, _context, _token) {
-			const foldingRanges = [];
-			const decoratorRanges = [];
-			const regionStack: [number, boolean|null][] = [];
-			const indentStack: number[] = [];
-			let lastIndent = 0;
-
-			const featureTags = await getFeatureTags();
-			const evaluator = new BooleanEvaluator(featureTags);
-
-			const editors = vscode.window.visibleTextEditors.filter(e => e.document.uri.toString() === document.uri.toString());
-			const tabSize = (editors[0] || vscode.window.activeTextEditor)?.options.tabSize as number ?? 4;
-
-			for (let i=0; i < document.lineCount; ++i) {
-				const line = document.lineAt(i);
-				const text = line.text;
-
-				const indent = countIndent(text, tabSize);
-				if (indent > lastIndent) {
-					indentStack.push(i-1);
-					lastIndent = indent;
-				} else if (indent < lastIndent && indent !== -1) {
-					const start = indentStack.pop() as number;
-					foldingRanges.push(new vscode.FoldingRange(start, i-1, vscode.FoldingRangeKind.Region));
-					lastIndent = indent;
-				}
-
-				const ifBeginIndex = text.indexOf("--IF_BEGIN");
-				if (ifBeginIndex !== -1) {
-					const isActive = evaluator.eval(text.substring(ifBeginIndex+10));
-					regionStack.push([ i, isActive ]);
-				} else if (text.indexOf("--IF_END") !== -1) {
-					const region = regionStack.pop();
-					if (region) {
-						let [start, isActive] = region;
-						foldingRanges.push(new vscode.FoldingRange(start, i-1, vscode.FoldingRangeKind.Region));
-						if (!isActive) {
-							decoratorRanges.push(new vscode.Range(start+1, 0, i, 0));
-						}
-					} else {
-						//console.log('Stack underflow!');
-					}
-				} else if (regionStack.length === 0) {
-					const ifLineIndex = text.indexOf("--IF_LINE");
-					if (ifLineIndex !== -1) {
-						const isActive = evaluator.eval(text.substring(ifLineIndex+9));
-						if (!isActive) {
-							decoratorRanges.push(new vscode.Range(i, 0, i, ifLineIndex));
-						}
-					}
-				}
-			}
-
-			for (const e of editors) {
-				e.setDecorations(preprocessorDimDecoration, decoratorRanges);
-			}
-
-			if (regionStack.length !== 0) {
-				//console.log('Unbalanced region stack!');
-			}
-
-			if (indentStack.length !== 0) {
-				//console.log('Unbalanced indent stack!');
-				const lastLine = document.lineCount - 1;
-				while (indentStack.length > 0) {
-					const start = indentStack.pop() as number;
-					foldingRanges.push(new vscode.FoldingRange(start, lastLine, vscode.FoldingRangeKind.Region));
-				}
-			}
-
-			return foldingRanges;
-		}
-	}));
 
 	type MethodData = {
 		name: string;
@@ -379,11 +272,11 @@ export function activate(context: vscode.ExtensionContext) {
 			const mdString = new vscode.MarkdownString();
 			mdString.supportHtml = true;
 			mdString.isTrusted = true;
-			const openExternalUri = formatCommand('fatshark-code-assist._goToResource', {
+			const openExternalUri = formatCommand('toadman-code-assist._goToResource', {
 				external: true,
 				file: uri.fsPath,
 			});
-			const openVSCodeUri = formatCommand('fatshark-code-assist._goToResource', {
+			const openVSCodeUri = formatCommand('toadman-code-assist._goToResource', {
 				external: false,
 				file: uri.fsPath,
 			});
@@ -500,7 +393,7 @@ export function activate(context: vscode.ExtensionContext) {
 				if (luaMatches) {
 					const indices = (<any> luaMatches).indices;
 					const range = new vscode.Range(i, indices[0][0], i, indices[0][1]);
-					const commandUri = formatCommand('fatshark-code-assist._goToResource', {
+					const commandUri = formatCommand('toadman-code-assist._goToResource', {
 						external: false,
 						file: `${rootUri}/${luaMatches[1]}`,
 						line: luaMatches[2] ? parseInt(luaMatches[2], 10) : 1,
@@ -515,7 +408,7 @@ export function activate(context: vscode.ExtensionContext) {
 				if (resMatches) {
 					const indices = (<any> resMatches).indices;
 					const range = new vscode.Range(i, indices[0][0], i, indices[0][1]);
-					const commandUri = formatCommand('fatshark-code-assist._goToResource', {
+					const commandUri = formatCommand('toadman-code-assist._goToResource', {
 						external: true,
 						file: `${rootUri}/${resMatches[2]}.${resMatches[1].toLowerCase()}`,
 					});

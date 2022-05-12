@@ -1,4 +1,4 @@
-import { join as pathJoin } from "path";
+import { join as pathJoin, basename as pathBaseName, dirname as pathDirName } from "path";
 import * as vscode from "vscode";
 import { connectionHandler } from "./connection-handler";
 import { getActiveToolchain } from "./extension";
@@ -133,7 +133,7 @@ class StingrayCompileTaskTerminal implements vscode.Pseudoterminal {
 				this.compileInProgress = false;
 				const success = data.status === "success";
 				if (this.definition.refresh && success) {
-					vscode.commands.executeCommand('fatshark-code-assist.Connection.reloadResources');
+					vscode.commands.executeCommand('toadman-code-assist.Connection.reloadResources');
 				}
 				if (this.fsWatchers.length > 0) {
 					this.tryStartCompile();
@@ -142,13 +142,15 @@ class StingrayCompileTaskTerminal implements vscode.Pseudoterminal {
 					this.doClose(success ? StatusCode.Success : StatusCode.Error);
 				}
 			}
-		} else if (data.type === "compile_progress") {
+		} else if (data.type === "compile_progress" && !data.done) {
 			// Note: data.file is not necessarily a file.
 			const count = data.count.toString();
 			const i = (data.i + 1).toString().padStart(count.length, " ");
 			const progress = this.applyStyle(`[progress]`, "33");
 			const file = this.applyStyle(`${data.file ?? "<unknown file>"}`, "3");
 			this.write("compile_progress", `${progress} ${i} / ${count} ${file}`);
+		} else if (data.type === "compile_progress" && data.done) {
+			this.write("compile_done", `status=${data.status}, file=${data.file}`);
 		} else if (data.type === "c") {
 			this.write("compile_done", `status=${data.status}, file=${data.file}`);
 		} else if (data.type === "message") {
@@ -201,13 +203,18 @@ class StingrayCompileTaskTerminal implements vscode.Pseudoterminal {
 
 		this.id = uuid4();
 
+		const sourceDirectoryMaps = [];
+		for(const mappedFolder of currentProject.MappedFolders) {
+			const folderName = pathBaseName(mappedFolder);
+			const folderPath = pathDirName(mappedFolder);
+			sourceDirectoryMaps.push({ "directory": folderName, "root" : folderPath });
+		}
+
 		const compileMessage: any = {
 			"id": this.id,
 			"type": "compile",
 			"source-directory": sourceDir,
-			"source-directory-maps": [
-				{ "directory": "core", "root" : config.SourceRepositoryPath ?? toolchain.path }
-			],
+			"source-directory-maps": sourceDirectoryMaps,
 			"data-directory": dataDir,
 			"source-platform": platform,
 			"destination-platform": "win32",

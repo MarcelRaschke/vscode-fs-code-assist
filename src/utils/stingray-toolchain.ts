@@ -28,7 +28,7 @@ export class StingrayToolchain {
 		/** Path to the toolchain root directory. */
 		public readonly path: string
 	) {
-		this.configPath = pathJoin(this.path, 'settings', 'ToolChainConfiguration.config');
+		this.configPath = pathJoin(this.path, 'settings', 'ToolChainConfiguration_1_9.config');
 		if (!fileExists(this.configPath)) {
 			throw new Error('Invalid toolchain');
 		}
@@ -51,9 +51,10 @@ export class StingrayToolchain {
 		return this.configCacheData!;
 	}
 
+	// TODO: make this configurable
 	private static buildToExecutableName = {
-		'debug': 'stingray_win64_dev_x64.exe',
-		'dev': 'stingray_win64_dev_x64.exe',
+		'debug': 'hydra_win64_dev.exe',
+		'dev': 'hydra_win64_dev.exe',
 		'release': 'vermintide2',
 	};
 

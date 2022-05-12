@@ -1,39 +1,36 @@
 {
-  "name": "fatshark-code-assist",
-  "displayName": "Fatshark Code Assist",
-  "description": "Stingray Intellisense, debugging and code browsing.",
-  "icon": "resources/fs-code-assist.png",
-  "version": "0.4.3",
-  "publisher": "Fatshark",
+  "name": "toadman-code-assist",
+  "displayName": "Toadman Code Assist",
+  "description": "Stingray Intellisense, debugging and code browsing. A fork of Fatshark's code assist",
+  "icon": "resources/toadman-code-assist.png",
+  "version": "0.1.0",
+  "publisher": "Toadman",
   "engines": {
     "vscode": "^1.63.0"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/FatsharkStudiosAB/vscode-fs-code-assist.git"
+    "url": "https://github.com/catdawg/vscode-fs-code-assist.git"
   },
   "author": {
-    "url": "http://www.fatshark.se",
-    "name": "Fatshark",
-    "email": "tools@fatshark.se"
+    "url": "https://toadmaninteractive.com/",
+    "name": "Toadman",
+    "email": "rui.campos@thetoadman.com"
   },
   "categories": [
     "Debuggers",
     "Programming Languages"
   ],
   "keywords": [
-    "fatshark",
+    "toadman",
     "stingray",
     "debugger",
     "lua",
     "sjson"
   ],
   "activationEvents": [
-    "onCommand:fatshark-code-assist.Target.scan",
-    "onCommand:fatshark-code-assist.Target.compile",
-    "onCommand:fatshark-code-assist.Connection.attachDebugger",
-    "onCommand:fatshark-code-assist.RunSet.run",
-    "onCommand:fatshark-code-assist.RunSet.compileAndRun",
+    "onCommand:toadman-code-assist.Target.scan",
+    "onCommand:toadman-code-assist.Connection.attachDebugger",
     "workspaceContains:settings.ini",
     "onUri",
     "onLanguage:lua",
@@ -44,75 +41,51 @@
   "contributes": {
     "commands": [
       {
-        "command": "fatshark-code-assist.Target.scan",
+        "command": "toadman-code-assist.Target.scan",
         "title": "Scan for Instances",
         "category": "Stingray",
         "icon": "$(search)"
       },
       {
-        "command": "fatshark-code-assist.Target.compile",
-        "title": "Compile Content",
-        "category": "Stingray",
-        "icon": "$(server-environment)"
-      },
-      {
-        "command": "fatshark-code-assist.Connection.attachDebugger",
+        "command": "toadman-code-assist.Connection.attachDebugger",
         "title": "Attach Debugger",
         "category": "Stingray",
         "icon": "$(debug-alt)"
       },
       {
-        "command": "fatshark-code-assist.Connection.openProfiler",
-        "title": "Open Profiler",
-        "category": "Stingray",
-        "icon": "$(symbol-unit)"
-      },
-      {
-        "command": "fatshark-code-assist.Connection.disconnect",
+        "command": "toadman-code-assist.Connection.disconnect",
         "title": "Disconnect",
         "category": "Stingray",
         "icon": "$(close)"
       },
       {
-        "command": "fatshark-code-assist.Connection.executeCommand",
+        "command": "toadman-code-assist.Connection.executeCommand",
         "title": "Execute Command",
         "category": "Stingray"
       },
       {
-        "command": "fatshark-code-assist.Connection.executeLua",
+        "command": "toadman-code-assist.Connection.executeLua",
         "title": "Execute Lua",
         "category": "Stingray"
       },
       {
-        "command": "fatshark-code-assist.Connection.executeSelection",
+        "command": "toadman-code-assist.Connection.executeSelection",
         "title": "Execute Selection",
         "category": "Stingray"
       },
       {
-        "command": "fatshark-code-assist.Connection.executeFile",
+        "command": "toadman-code-assist.Connection.executeFile",
         "title": "Execute File",
         "category": "Stingray"
       },
       {
-        "command": "fatshark-code-assist.Connection.reloadResources",
+        "command": "toadman-code-assist.Connection.reloadResources",
         "title": "Refresh Modified Resources",
         "category": "Stingray",
         "icon": "$(extensions-refresh)"
       },
       {
-        "command": "fatshark-code-assist.RunSet.compileAndRun",
-        "title": "Compile and Launch Run Set",
-        "category": "Stingray",
-        "icon": "$(run-all)"
-      },
-      {
-        "command": "fatshark-code-assist.RunSet.run",
-        "title": "Launch Run Set",
-        "category": "Stingray",
-        "icon": "$(run)"
-      },
-      {
-        "command": "fatshark-code-assist.flushToolcenterConfig",
+        "command": "toadman-code-assist.flushToolcenterConfig",
         "title": "Sync Toolcenter Config",
         "category": "Stingray",
         "icon": "$(cloud-download)"
@@ -121,107 +94,70 @@
     "menus": {
       "commandPalette": [
         {
-          "command": "fatshark-code-assist.Target.scan",
-          "when": "false"
-        },
-        {
-          "command": "fatshark-code-assist.Target.compile",
-          "when": "false"
-        },
-        {
-          "command": "fatshark-code-assist.Connection.openProfiler",
-          "when": "false"
-        },
-        {
-          "command": "fatshark-code-assist.RunSet.compileAndRun",
-          "when": "false"
-        },
-        {
-          "command": "fatshark-code-assist.RunSet.run",
+          "command": "toadman-code-assist.Target.scan",
           "when": "false"
         }
       ],
       "editor/context": [
         {
-          "command": "fatshark-code-assist.Connection.executeSelection",
+          "command": "toadman-code-assist.Connection.executeSelection",
           "group": "Stingray",
           "when": "editorHasSelection"
         }
       ],
       "view/title": [
         {
-          "command": "fatshark-code-assist.flushToolcenterConfig",
+          "command": "toadman-code-assist.flushToolcenterConfig",
           "group": "navigation",
-          "when": "view == fatshark-code-assist-Targets"
+          "when": "view == toadman-code-assist-Targets"
         },
         {
-          "command": "fatshark-code-assist.Connection.reloadResources",
-          "when": "view == fatshark-code-assist-Connections",
+          "command": "toadman-code-assist.Connection.reloadResources",
+          "when": "view == toadman-code-assist-Connections",
           "group": "navigation@1"
-        },
-        {
-          "command": "fatshark-code-assist.flushToolcenterConfig",
-          "group": "navigation",
-          "when": "view == fatshark-code-assist-RunSets"
         }
       ],
       "view/item/context": [
         {
-          "command": "fatshark-code-assist.Target.scan",
+          "command": "toadman-code-assist.Target.scan",
           "when": "viewItem == target",
           "group": "inline@1"
         },
         {
-          "command": "fatshark-code-assist.Target.compile",
-          "when": "viewItem == target",
-          "group": "inline@2"
-        },
-        {
-          "command": "fatshark-code-assist.Connection.attachDebugger",
+          "command": "toadman-code-assist.Connection.attachDebugger",
           "when": "viewItem == connection",
           "group": "inline@1"
         },
         {
-          "command": "fatshark-code-assist.Connection.openProfiler",
+          "command": "toadman-code-assist.Connection.disconnect",
           "when": "viewItem == connection",
           "group": "inline@2"
         },
         {
-          "command": "fatshark-code-assist.Connection.disconnect",
-          "when": "viewItem == connection",
-          "group": "inline@3"
-        },
-        {
-          "command": "fatshark-code-assist.Connection.executeCommand",
+          "command": "toadman-code-assist.Connection.executeCommand",
           "when": "viewItem == connection"
         },
         {
-          "command": "fatshark-code-assist.Connection.executeLua",
+          "command": "toadman-code-assist.Connection.executeLua",
           "when": "viewItem == connection"
         },
         {
-          "command": "fatshark-code-assist.Connection.executeSelection",
+          "command": "toadman-code-assist.Connection.executeSelection",
           "when": "viewItem == connection"
         },
         {
-          "command": "fatshark-code-assist.Connection.executeFile",
+          "command": "toadman-code-assist.Connection.executeFile",
           "when": "viewItem == connection"
         },
         {
-          "command": "fatshark-code-assist.Connection.reloadResources",
+          "command": "toadman-code-assist.Connection.reloadResources",
           "when": "viewItem == connection"
-        },
-        {
-          "command": "fatshark-code-assist.RunSet.compileAndRun",
-          "when": "viewItem == run-set",
-          "group": "inline@1",
-          "alt": "fatshark-code-assist.RunSet.run"
         }
       ]
     },
     "configuration": {
       "type": "object",
-      "title": "Fatshark Code Assist",
+      "title": "Toadman Code Assist",
       "properties": {
         "StingrayLua.toolchainPath": {
           "type": "string",
@@ -232,8 +168,8 @@
         "StingrayLua.toolchainName": {
           "type": "string",
           "scope": "window",
-          "default": "vermintide2",
-          "description": "Toolchain name, e.g. `vermintide2`.\nDefaults to `vermintide2`."
+          "default": "hydra",
+          "description": "Toolchain name, e.g. `hydra`.\nDefaults to `hydra`."
         },
         "StingrayLua.platform": {
           "type": "string",
@@ -338,7 +274,7 @@
       },
       {
         "language": "lua",
-        "scopeName": "source.fatshark.lua",
+        "scopeName": "source.toadman.lua",
         "path": "./syntaxes/lua-stingray.json"
       },
       {
@@ -350,36 +286,31 @@
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "fatshark-code-assist",
-          "title": "FS Code Assist",
-          "icon": "resources/fs-code-assist.svg",
-          "when": "fatshark-code-assist:isStingrayProject"
+          "id": "toadman-code-assist",
+          "title": "Toadman Code Assist",
+          "icon": "resources/toadman-code-assist.svg",
+          "when": "toadman-code-assist:isStingrayProject"
         }
       ]
     },
     "views": {
-      "fatshark-code-assist": [
+      "toadman-code-assist": [
         {
-          "id": "fatshark-code-assist-Targets",
+          "id": "toadman-code-assist-Targets",
           "name": "Targets",
-          "when": "fatshark-code-assist:isStingrayProject"
+          "when": "toadman-code-assist:isStingrayProject"
         },
         {
-          "id": "fatshark-code-assist-Connections",
+          "id": "toadman-code-assist-Connections",
           "name": "Connections",
-          "when": "fatshark-code-assist:isStingrayProject"
-        },
-        {
-          "id": "fatshark-code-assist-RunSets",
-          "name": "Run Sets",
-          "when": "fatshark-code-assist:isStingrayProject"
+          "when": "toadman-code-assist:isStingrayProject"
         }
       ]
     },
     "viewsWelcome": [
       {
-        "view": "fatshark-code-assist-Connections",
-        "contents": "[Scan for instances on localhost](command:fatshark-code-assist.Target.scan)",
+        "view": "toadman-code-assist-Connections",
+        "contents": "[Scan for instances on localhost](command:toadman-code-assist.Target.scan)",
         "when": "editorIsOpen"
       }
     ],
@@ -401,8 +332,7 @@
             "body": {
               "type": "stingray_lua",
               "request": "launch",
-              "toolchain": "C:/BitSquidBinaries/${2:vermintide2}",
-              "targetId": "00000000-1111-2222-3333-444444444444",
+              "toolchain": "${config:StingrayLua.toolchainPath}/${config:StingrayLua.toolchainName}",
               "arguments": "",
               "name": "${1:My Launch Configuration}"
             }
@@ -413,7 +343,7 @@
             "body": {
               "type": "stingray_lua",
               "request": "attach",
-              "toolchain": "C:/BitSquidBinaries/${2:vermintide2}",
+              "toolchain": "${config:StingrayLua.toolchainPath}/${config:StingrayLua.toolchainName}",
               "ip": "{3:localhost}",
               "port": "${4:14000}",
               "name": "${5:Attach to ${3}:${4}}"
@@ -440,8 +370,8 @@
               },
               "toolchain": {
                 "type": "string",
-                "description": "The absolute path to the toolchain (eg. C:/BitSquidBinaries/vermintide2).",
-                "toolchain": "C:/BitSquidBinaries/vermintide2"
+                "description": "The absolute path to the toolchain.",
+                "toolchain": "${config:StingrayLua.toolchainPath}/${config:StingrayLua.toolchainName}"
               }
             }
           },
@@ -450,11 +380,6 @@
               "toolchain"
             ],
             "properties": {
-              "targetId": {
-                "type": "string",
-                "description": "UUID of the launch target.",
-                "default": "00000000-1111-2222-3333-444444444444"
-              },
               "timeout": {
                 "type": "number",
                 "description": "Abort the launch if it takes longer than this to attach (seconds).",
@@ -467,17 +392,12 @@
               },
               "toolchain": {
                 "type": "string",
-                "description": "The absolute path to the toolchain (eg. C:/BitSquidBinaries/vermintide2).",
-                "default": "C:/BitSquidBinaries/vermintide2"
+                "description": "The absolute path to the toolchain.",
+                "toolchain": "${config:StingrayLua.toolchainPath}/${config:StingrayLua.toolchainName}"
               },
               "detach": {
                 "type": "boolean",
                 "description": "If true, the game will stay open after the debugger disconnects.",
-                "default": false
-              },
-              "compile": {
-                "type": "boolean",
-                "description": "Compile in the same process before launching.",
                 "default": false
               }
             }
@@ -616,13 +536,15 @@
   "dependencies": {
     "simplified-json": "^0.3.0",
     "vscode-debugadapter": "^1.51.0",
-    "vscode-debugprotocol": "^1.51.0"
+    "vscode-debugprotocol": "^1.51.0",
+    "ws": "^8.5.0"
   },
   "devDependencies": {
     "@types/glob": "^7.1.4",
     "@types/mocha": "^9.0.0",
     "@types/node": "14.x",
     "@types/vscode": "^1.62.0",
+    "@types/ws": "^8.5.3",
     "@typescript-eslint/eslint-plugin": "^5.1.0",
     "@typescript-eslint/parser": "^5.1.0",
     "@vscode/test-electron": "^1.6.2",

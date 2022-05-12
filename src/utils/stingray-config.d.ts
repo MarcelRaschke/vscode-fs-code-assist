@@ -14,8 +14,6 @@ export type ToolchainConfig = {
 	Renderer: 'D3D11' | 'D3D12';
 	/** The ID of the selected run set. */
 	RunId: string;
-	/** A list of configured run sets. */
-	RunSets: RunSet[];
 	/** The path to the engine sources, if this toolchain was compiled locally.
 	 *
 	 * Whenever this is set, the core/ directory used in the source directory
@@ -42,6 +40,8 @@ export type Project = {
 	WantedBackgroundColor: Color;
 	/** The text color used for targets. */
 	WantedTargetColor: Color;
+	/** The mapped folders for the compilation */
+	MappedFolders: string[];
 };
 
 /** A color specification */
@@ -91,8 +91,6 @@ export type Target = {
 	Platform: Platform;
 	/** Port number of the target. */
 	Port: number;
-	/** Port at which the profiler will try to bind. */
-	ProfilerPort: number;
 };
 
 export type Platform = 'win32' | 'ps4' | 'xb1' | 'xb12';

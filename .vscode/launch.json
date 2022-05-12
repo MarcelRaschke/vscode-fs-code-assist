@@ -17,7 +17,7 @@
 				"${workspaceFolder}/out/**/*.js",
 			],
 			"env": {
-				"FATSHARK_CODE_ASSIST_DEBUG_MODE": "1"
+				"TOADMAN_CODE_ASSIST_DEBUG_MODE": "1"
 			},
 			"preLaunchTask": "npm: compile"
 		},
@@ -34,7 +34,6 @@
 				"${workspaceFolder}/out/**/*.js"
 			],
 			"env": {
-				"FATSHARK_CODE_ASSIST_DEBUG_MODE": "1"
 			},
 			"preLaunchTask": "npm: compile"
 		},

@@ -8,16 +8,16 @@ const buildTooltip = (info: any) => {
 	tooltip.appendMarkdown([
 		`---`,
 		`**Port**: ${info.console_port}  `,
-		`**Profiler port**: ${info.profiler_port}  ([Open Profiler](http://localhost:${info.profiler_port || 1338}))  `,
+		//`**Profiler port**: ${info.profiler_port}  ([Open Profiler](http://localhost:${info.profiler_port || 1338}))  `,
 		`**Build**: ${info.build} (identifier: ${info.build_identifier})  `,
 		`**Platform**: ${info.platform}  `,
 		`**Process ID**: ${info.process_id}  `,
 		`**Session ID**: ${info.session_id}  `,
-		`**Machine ID**: ${info.machine_id}  `,
-		`**Dedicated server?**: ${info.is_dedicated_server ? "Yes" : "No"}  `,
+		//`**Machine ID**: ${info.machine_id}  `,
+		//`**Dedicated server?**: ${info.is_dedicated_server ? "Yes" : "No"}  `,
 		`**Bundled?**: ${info.bundled ? "Yes" : "No"}  `,
 		`**Launch time**: ${ new Date(Date.now() - 1000*info.time_since_launch).toLocaleString()}  `,
-		`**Plugins**: ${info.plugins.join(", ")}  `,
+		//`**Plugins**: ${info.plugins.join(", ")}  `,
 		`**Arguments**: \`${info.argv.join(" ")}\`  `,
 	].join("\n"));
 	return tooltip;
@@ -48,7 +48,7 @@ export class ConnectionsNodeProvider implements vscode.TreeDataProvider<Stingray
 		treeItem.contextValue = "connection";
 		treeItem.command = {
 			title: "Focus output",
-			command: "fatshark-code-assist.Connection._focusOutput",
+			command: "toadman-code-assist.Connection._focusOutput",
 			arguments: [ connection ],
 		};
 		return treeItem;

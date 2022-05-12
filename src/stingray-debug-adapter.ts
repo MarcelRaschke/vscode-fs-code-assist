@@ -117,8 +117,10 @@ class StingrayDebugSession extends DebugAdapter.DebugSession {
 	expandTableIndex = 0;
 	expandTableCallbacks = new Map<number, { (data: any): void }>();
 
+	stingrayConsolePort?: number;
+
 	// Debugging the debugger.
-	loggingEnabled = !!process.env.FATSHARK_CODE_ASSIST_DEBUG_MODE;
+	loggingEnabled = !!process.env.TOADMAN_CODE_ASSIST_DEBUG_MODE;
 
 	// Project information.
 	projectFolderMaps = new Map<string, string>();
@@ -336,6 +338,7 @@ class StingrayDebugSession extends DebugAdapter.DebugSession {
 
 			connection.onDidReceiveData.add(this.onStingrayMessage.bind(this));
 			connection.onDidDisconnect.add(() => {
+				this.stingrayConsolePort = undefined;
 				this.breakpoints.clear();
 				this.callbacks.clear();
 				this.sendEvent(new DebugAdapter.OutputEvent(`Disconnected from ${ip}:${port}\r\n`, 'console'));
@@ -344,16 +347,11 @@ class StingrayDebugSession extends DebugAdapter.DebugSession {
 				reject();
 			});
 			connection.onDidConnect.add(async () => {
+				this.stingrayConsolePort = port;
 				this.sendEvent(new DebugAdapter.OutputEvent(`Connected to ${ip}:${port}\r\n`, 'console'));
-				// In case the engine is at wait_for_script_debugger, we unblock it.
-				connection.sendJSON({ // Notify that we're connected (--wait-for-debugger).
-					type: 'boot_command',
-					message: 'script_debugger_connected',
-				});
-				// If the engine is already running, then we request a status.
-				connection.sendDebuggerCommand('report_status');
 				this.sendEvent(new DebugAdapter.InitializedEvent());
 				this.connection = connection;
+
 				resolve(connection);
 				this.ensureSnippetIsInjected();
 			});

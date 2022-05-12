@@ -233,10 +233,10 @@ local handlers = {
 	end,
 }
 
-local cjson = stingray.cjson.stingray_init()
+local json = require "scripts/json"
 
 local function VSCodeDebugAdapter(str)
-	local request = cjson.decode(str)
+	local request = json.decode(str)
 	local ok, result = pcall(handlers[request.request_type], request)
 	stingray.Application.console_send({
 		type = "vscode_debug_adapter",

@@ -3,36 +3,36 @@
 		""
 	],
 	"name": "Lua",
-	"scopeName": "source.fatshark.lua",
+	"scopeName": "source.toadman.lua",
 	"patterns": [
 		{
 			"begin": "\\b(function)\\s*(\\b\\w+(?:[.:]\\w+)*\\s*)?(\\()",
 			"beginCaptures": {
 				"1": {
-					"name": "keyword.control.function.fatshark.lua"
+					"name": "keyword.control.function.toadman.lua"
 				},
 				"2": {
-					"name": "entity.name.function.fatshark.lua"
+					"name": "entity.name.function.toadman.lua"
 				},
 				"3": {
-					"name": "punctuation.definition.parameters.begin.fatshark.lua"
+					"name": "punctuation.definition.parameters.begin.toadman.lua"
 				}
 			},
 			"end": "\\)",
 			"endCaptures": {
 				"0": {
-					"name": "punctuation.definition.parameters.end.fatshark.lua"
+					"name": "punctuation.definition.parameters.end.toadman.lua"
 				}
 			},
-			"name": "meta.function.fatshark.lua",
+			"name": "meta.function.toadman.lua",
 			"patterns": [
 				{
 					"match": "[a-zA-Z_]\\w*",
-					"name": "variable.parameter.function.fatshark.lua"
+					"name": "variable.parameter.function.toadman.lua"
 				},
 				{
 					"match": ",",
-					"name": "punctuation.separator.arguments.fatshark.lua"
+					"name": "punctuation.separator.arguments.toadman.lua"
 				},
 				{
 					"include": "#comments"
@@ -41,11 +41,11 @@
 		},
 		{
 			"match": "(?i)\\b-?0x[0-9a-f]+(\\.[0-9a-f]+)?([pe][-+]?\\d*)?(?:u?ll)?\\b",
-			"name": "constant.numeric.hexadecimal.fatshark.lua"
+			"name": "constant.numeric.hexadecimal.toadman.lua"
 		},
 		{
 			"match": "(?i)\\b-?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:e[+-]?\\d+)?(?:u?ll)?\\b",
-			"name": "constant.numeric.decimal.fatshark.lua"
+			"name": "constant.numeric.decimal.toadman.lua"
 		},
 		{
 			"include": "#comments"
@@ -54,13 +54,13 @@
 			"begin": "([\"'])",
 			"beginCaptures": {
 				"0": {
-					"name": "punctuation.definition.string.begin.fatshark.lua"
+					"name": "punctuation.definition.string.begin.toadman.lua"
 				}
 			},
 			"end": "\\1",
 			"endCaptures": {
 				"0": {
-					"name": "punctuation.definition.string.end.fatshark.lua"
+					"name": "punctuation.definition.string.end.toadman.lua"
 				}
 			},
 			"name": "string.quoted.double.lua",
@@ -74,20 +74,20 @@
 			"begin": "(?<=\\.cdef)\\s*(\\[(=*)\\[)",
 			"beginCaptures": {
 				"0": {
-					"name": "string.quoted.other.multiline.fatshark.lua"
+					"name": "string.quoted.other.multiline.toadman.lua"
 				},
 				"1": {
-					"name": "punctuation.definition.string.begin.fatshark.lua"
+					"name": "punctuation.definition.string.begin.toadman.lua"
 				}
 			},
-			"contentName": "meta.embedded.fatshark.lua",
+			"contentName": "meta.embedded.toadman.lua",
 			"end": "(\\]\\2\\])",
 			"endCaptures": {
 				"0": {
-					"name": "string.quoted.other.multiline.fatshark.lua"
+					"name": "string.quoted.other.multiline.toadman.lua"
 				},
 				"1": {
-					"name": "punctuation.definition.string.end.fatshark.lua"
+					"name": "punctuation.definition.string.end.toadman.lua"
 				}
 			},
 			"patterns": [
@@ -149,72 +149,72 @@
 		},
 		{
 			"match": "\\b(?:and|or|not)\\b",
-			"name": "keyword.operator.fatshark.lua"
+			"name": "keyword.operator.toadman.lua"
 		},
 		{
 			"match": "\\+|-|%|#|\\*|\\/|\\^|==?|~=|<=?|>=?|(?<!\\.)\\.{2}(?!\\.)",
-			"name": "keyword.operator.fatshark.lua"
+			"name": "keyword.operator.toadman.lua"
 		},
 		{
 			"match": "\\bself\\b",
-			"name": "variable.language.self.fatshark.lua"
+			"name": "variable.language.self.toadman.lua"
 		},
 		{
 			"match": "\\bsuper\\b",
-			"name": "variable.language.super.fatshark.lua"
+			"name": "variable.language.super.toadman.lua"
 		},
 		{
 			"match": "\\blocal\\b",
-			"name": "storage.type.local.fatshark.lua"
+			"name": "storage.type.local.toadman.lua"
 		},
 		{
 			"match": "\\b(?:false|nil|true|_G|_VERSION|math\\.(pi|huge))\\b|\\.{3}",
-			"name": "constant.language.fatshark.lua"
+			"name": "constant.language.toadman.lua"
 		},
 		{
 			"match": "\\b(?:table\\.clone|string\\.upper)\\b",
-			"name": "invalid.deprecated.fatshark.lua"
+			"name": "invalid.deprecated.toadman.lua"
 		},
 		{
 			"match": "\\b(?:assert|collectgarbage|dofile|error|gcinfo|getfenv|getmetatable|ipairs|load|loadfile|loadstring|module|newproxy|next|pairs|pcall|print|rawequal|rawget|rawset|require|select|setfenv|setmetatable|tonumber|tostring|type|unpack|xpcall)\\b",
-			"name": "support.function.global.fatshark.lua"
+			"name": "support.function.global.toadman.lua"
 		},
 		{
 			"match": "\\bscript_data\\b",
-			"name": "constant.other.script_data.fatshark.lua"
+			"name": "constant.other.script_data.toadman.lua"
 		},
 		{
 			"match": "\\b(?:bit|coroutine|debug|io|jit|math|os|package|string|table)(?:\\.\\w+)?\\b",
-			"name": "support.function.fatshark.lua"
+			"name": "support.function.toadman.lua"
 		},
 		{
 			"captures": {
 				"1": {
-					"name": "entity.name.namespace.fatshark.lua"
+					"name": "entity.name.namespace.toadman.lua"
 				},
 				"2": {
 					"patterns": [
 						{
 							"match": "\\w+",
-							"name": "entity.name.namespace.fatshark.lua"
+							"name": "entity.name.namespace.toadman.lua"
 						}
 					]
 				}
 			},
 			"match": "(?<![.:])\\b([A-Z]+[a-z]\\w*)((?:\\.\\w+)*)(?=[:.][^.])",
-			"name": "meta.global.access.fatshark.lua"
+			"name": "meta.global.access.toadman.lua"
 		},
 		{
 			"match": "\\b(?:Vector2|Vector3|Quaternion|Color|Matrix4x4)(?:Box)?\\b(?=\\s*(?:[({\"']|\\[=*\\[))",
-			"name": "support.class.stingray.fatshark.lua"
+			"name": "support.class.stingray.toadman.lua"
 		},
 		{
 			"match": "(?<=:)\\w+\\b(?=\\s*(?:[({\"']|\\[=*\\[))",
-			"name": "entity.name.function.fatshark.lua"
+			"name": "entity.name.function.toadman.lua"
 		},
 		{
 			"match": "(?<!:)\\w+\\b(?=\\s*(?:[({\"']|\\[=*\\[))",
-			"name": "support.function.fatshark.lua"
+			"name": "support.function.toadman.lua"
 		}
 	],
 	"repository": {
@@ -222,37 +222,37 @@
 			"patterns": [
 				{
 					"match": "\\\\[abfnrtvz\\\\\"'\\n]",
-					"name": "constant.character.escape.fatshark.lua"
+					"name": "constant.character.escape.toadman.lua"
 				},
 				{
 					"match": "\\\\\\d{1,3}",
-					"name": "constant.character.escape.byte.fatshark.lua"
+					"name": "constant.character.escape.byte.toadman.lua"
 				},
 				{
 					"match": "\\\\x[0-9A-Fa-f][0-9A-Fa-f]",
-					"name": "constant.character.escape.byte.fatshark.lua"
+					"name": "constant.character.escape.byte.toadman.lua"
 				},
 				{
 					"match": "\\\\u\\{[0-9A-Fa-f]+\\}",
-					"name": "constant.character.escape.unicode.fatshark.lua"
+					"name": "constant.character.escape.unicode.toadman.lua"
 				},
 				{
 					"match": "\\\\.",
-					"name": "invalid.illegal.character.escape.fatshark.lua"
+					"name": "invalid.illegal.character.escape.toadman.lua"
 				}
 			]
 		},
 		"comments": {
 			"patterns": [
 				{
-					"name": "meta.preprocessor.fatshark",
+					"name": "meta.preprocessor.toadman",
 					"begin": "((--)IF_LINE)\\b",
 					"beginCaptures": {
 						"1": {
-							"name": "keyword.control.preprocessor.fatshark.lua"
+							"name": "keyword.control.preprocessor.toadman.lua"
 						},
 						"2": {
-							"name": "punctuation.definition.preprocessor.fatshark.lua"
+							"name": "punctuation.definition.preprocessor.toadman.lua"
 						}
 					},
 					"end": "\\n",
@@ -263,26 +263,26 @@
 					]
 				},
 				{
-					"name": "meta.preprocessor.fatshark.lua",
+					"name": "meta.preprocessor.toadman.lua",
 					"begin": "^\\s*((--)IF_BEGIN)\\b",
 					"beginCaptures": {
 						"1": {
-							"name": "keyword.control.preprocessor.fatshark.lua"
+							"name": "keyword.control.preprocessor.toadman.lua"
 						},
 						"2": {
-							"name": "punctuation.definition.preprocessor.fatshark.lua"
+							"name": "punctuation.definition.preprocessor.toadman.lua"
 						}
 					},
 					"end": "^\\s*((--)IF_END)\\b(.*)\\n",
 					"endCaptures": {
 						"1": {
-							"name": "keyword.control.preprocessor.fatshark.lua"
+							"name": "keyword.control.preprocessor.toadman.lua"
 						},
 						"2": {
-							"name": "punctuation.definition.preprocessor.fatshark.lua"
+							"name": "punctuation.definition.preprocessor.toadman.lua"
 						},
 						"3": {
-							"name": "comment.line.preprocessor.fatshark.lua"
+							"name": "comment.line.preprocessor.toadman.lua"
 						}
 					},
 					"patterns": [
@@ -296,40 +296,40 @@
 							]
 						},
 						{
-							"include": "source.fatshark.lua"
+							"include": "source.toadman.lua"
 						}
 					]
 				},
 				{
-					"name": "meta.preprocessor.fatshark.lua",
+					"name": "meta.preprocessor.toadman.lua",
 					"begin": "^\\s*((--)(KEEP|REMOVE)_IF)\\b",
 					"beginCaptures": {
 						"1": {
-							"name": "keyword.control.preprocessor.fatshark.lua"
+							"name": "keyword.control.preprocessor.toadman.lua"
 						},
 						"2": {
-							"name": "punctuation.definition.preprocessor.fatshark.lua"
+							"name": "punctuation.definition.preprocessor.toadman.lua"
 						}
 					},
 					"end": "^\\s*((--)\\2_IF)\\b(.*)\\n",
 					"endCaptures": {
 						"1": {
-							"name": "keyword.control.preprocessor.fatshark.lua"
+							"name": "keyword.control.preprocessor.toadman.lua"
 						},
 						"2": {
-							"name": "punctuation.definition.preprocessor.fatshark.lua"
+							"name": "punctuation.definition.preprocessor.toadman.lua"
 						},
 						"3": {
-							"name": "comment.line.preprocessor.fatshark.lua"
+							"name": "comment.line.preprocessor.toadman.lua"
 						}
 					},
 					"patterns": [
 						{
 							"match": "\\G\\s*(win32|ps4|xb1)",
-							"name": "constant.language.preprocessor.fatshark"
+							"name": "constant.language.preprocessor.toadman"
 						},
 						{
-							"include": "source.fatshark.lua"
+							"include": "source.toadman.lua"
 						}
 					]
 				},
@@ -337,13 +337,13 @@
 					"begin": "--\\[(=*)\\[",
 					"beginCaptures": {
 						"0": {
-							"name": "punctuation.definition.comment.begin.fatshark.lua"
+							"name": "punctuation.definition.comment.begin.toadman.lua"
 						}
 					},
 					"end": "\\]\\1\\]",
 					"endCaptures": {
 						"0": {
-							"name": "punctuation.definition.comment.end.fatshark.lua"
+							"name": "punctuation.definition.comment.end.toadman.lua"
 						}
 					},
 					"name": "comment.block.lua"
@@ -352,11 +352,11 @@
 					"begin": "--",
 					"beginCaptures": {
 						"0": {
-							"name": "punctuation.definition.comment.fatshark.lua"
+							"name": "punctuation.definition.comment.toadman.lua"
 						}
 					},
 					"end": "\\n",
-					"name": "comment.line.double-dash.fatshark.lua",
+					"name": "comment.line.double-dash.toadman.lua",
 					"patterns": [
 						{
 							"include": "#adoc"
@@ -370,7 +370,7 @@
 				{
 					"captures": {
 						"1": {
-							"name": "storage.type.class.adoc.fatshark.lua"
+							"name": "storage.type.class.adoc.toadman.lua"
 						}
 					},
 					"match": "(@adoc)\\s+(lua)\\b"
@@ -378,10 +378,10 @@
 				{
 					"captures": {
 						"1": {
-							"name": "storage.type.class.adoc.fatshark.lua"
+							"name": "storage.type.class.adoc.toadman.lua"
 						},
 						"2": {
-							"name": "variable.other.adoc.fatshark.lua"
+							"name": "variable.other.adoc.toadman.lua"
 						}
 					},
 					"match": "(@arg|@ret)\\s+(\\w+)"
@@ -390,37 +390,37 @@
 					"begin": "(@sig)\\s+(\\w+\\.)*(\\w+)\\s*\\(",
 					"beginCaptures": {
 						"1": {
-							"name": "storage.type.class.adoc.fatshark.lua"
+							"name": "storage.type.class.adoc.toadman.lua"
 						},
 						"2": {
-							"name": "entity.name.namespace.adoc.fatshark.lua"
+							"name": "entity.name.namespace.adoc.toadman.lua"
 						},
 						"3": {
-							"name": "entity.name.function.adoc.fatshark.lua"
+							"name": "entity.name.function.adoc.toadman.lua"
 						}
 					},
 					"end": "\\)",
 					"patterns": [
 						{
 							"DISABLED_match": "\\b(?:boolean|nil|number|string|table|Quaternion|Vector2|Vector3)\\b",
-							"name": "entity.name.type.adoc.fatshark.lua"
+							"name": "entity.name.type.adoc.toadman.lua"
 						},
 						{
 							"DISABLED_match": "\\?|\\[\\]",
-							"name": "keyword.operator.type.adoc.fatshark.lua"
+							"name": "keyword.operator.type.adoc.toadman.lua"
 						},
 						{
 							"DISABLED_match": ",",
-							"name": "punctuation.separator.parameter.adoc.fatshark.lua"
+							"name": "punctuation.separator.parameter.adoc.toadman.lua"
 						}
 					]
 				},
 				{
-					"name": "storage.type.class.adoc.fatshark.lua",
+					"name": "storage.type.class.adoc.toadman.lua",
 					"match": "@(?:des|obj|grp)\\b"
 				},
 				{
-					"name": "token.warn-token @TO.adoc.fatshark.lua",
+					"name": "token.warn-token @TO.adoc.toadman.lua",
 					"match": "(?i)(@todo)\\b"
 				}
 			]
@@ -429,26 +429,26 @@
 			"patterns": [
 				{
 					"match": "\\(",
-					"name": "punctuation.parens.begin.preprocessor.fatshark.lua"
+					"name": "punctuation.parens.begin.preprocessor.toadman.lua"
 				},
 				{
 					"match": "\\)",
-					"name": "punctuation.parens.end.preprocessor.fatshark.lua"
+					"name": "punctuation.parens.end.preprocessor.toadman.lua"
 				},
 				{
 					"match": "\\b(?:and|or|not)\\b",
-					"name": "keyword.operator.logical.preprocessor.fatshark.lua"
+					"name": "keyword.operator.logical.preprocessor.toadman.lua"
 				},
 				{
 					"match": "\\b(?:win32|xb1|ps4)\\b",
-					"name": "constant.language.preprocessor.fatshark.lua"
+					"name": "constant.language.preprocessor.toadman.lua"
 				},
 				{
 					"match": "\\b[A-Z]\\w*\\b",
-					"name": "entity.name.function.preprocessor.fatshark.lua"
+					"name": "entity.name.function.preprocessor.toadman.lua"
 				}
 			],
-			"name": "meta.preprocessor.fatshark.lua"
+			"name": "meta.preprocessor.toadman.lua"
 		}
 	}
 }

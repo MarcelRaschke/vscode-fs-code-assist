@@ -79,26 +79,26 @@
 		"comments": {
 			"patterns": [
 				{
-					"name": "meta.preprocessor.fatshark",
+					"name": "meta.preprocessor.toadman",
 					"begin": "^\\s*((//)IF_BEGIN)\\b",
 					"beginCaptures": {
 						"1": {
-							"name": "keyword.control.preprocessor.fatshark"
+							"name": "keyword.control.preprocessor.toadman"
 						},
 						"2": {
-							"name": "punctuation.definition.preprocessor.fatshark"
+							"name": "punctuation.definition.preprocessor.toadman"
 						}
 					},
 					"end": "^\\s*((//)IF_END)\\b(.*)\\n",
 					"endCaptures": {
 						"1": {
-							"name": "keyword.control.preprocessor.fatshark"
+							"name": "keyword.control.preprocessor.toadman"
 						},
 						"2": {
-							"name": "punctuation.definition.preprocessor.fatshark"
+							"name": "punctuation.definition.preprocessor.toadman"
 						},
 						"3": {
-							"name": "comment.line.preprocessor.fatshark"
+							"name": "comment.line.preprocessor.toadman"
 						}
 					},
 					"patterns": [
@@ -117,32 +117,32 @@
 					]
 				},
 				{
-					"name": "meta.preprocessor.fatshark",
+					"name": "meta.preprocessor.toadman",
 					"begin": "^\\s*((//)(KEEP|REMOVE)_IF)\\b",
 					"beginCaptures": {
 						"1": {
-							"name": "keyword.control.preprocessor.fatshark"
+							"name": "keyword.control.preprocessor.toadman"
 						},
 						"2": {
-							"name": "punctuation.definition.preprocessor.fatshark"
+							"name": "punctuation.definition.preprocessor.toadman"
 						}
 					},
 					"end": "^\\s*((//)\\2_IF)\\b(.*)\\n",
 					"endCaptures": {
 						"1": {
-							"name": "keyword.control.preprocessor.fatshark"
+							"name": "keyword.control.preprocessor.toadman"
 						},
 						"2": {
-							"name": "punctuation.definition.preprocessor.fatshark"
+							"name": "punctuation.definition.preprocessor.toadman"
 						},
 						"3": {
-							"name": "comment.line.preprocessor.fatshark"
+							"name": "comment.line.preprocessor.toadman"
 						}
 					},
 					"patterns": [
 						{
 							"match": "\\G\\s*(win32|ps4|xb1)",
-							"name": "constant.language.preprocessor.fatshark"
+							"name": "constant.language.preprocessor.toadman"
 						},
 						{
 							"include": "source.sjson"
@@ -356,26 +356,26 @@
 			"patterns": [
 				{
 					"match": "\\(",
-					"name": "punctuation.parens.begin.preprocessor.fatshark"
+					"name": "punctuation.parens.begin.preprocessor.toadman"
 				},
 				{
 					"match": "\\)",
-					"name": "punctuation.parens.end.preprocessor.fatshark"
+					"name": "punctuation.parens.end.preprocessor.toadman"
 				},
 				{
 					"match": "\\b(?:and|or|not)\\b",
-					"name": "keyword.operator.logical.preprocessor.fatshark"
+					"name": "keyword.operator.logical.preprocessor.toadman"
 				},
 				{
 					"match": "\\b(?:win32|xb1|ps4)\\b",
-					"name": "constant.language.preprocessor.fatshark"
+					"name": "constant.language.preprocessor.toadman"
 				},
 				{
 					"match": "\\b[A-Z]\\w*\\b",
-					"name": "entity.name.function.preprocessor.fatshark"
+					"name": "entity.name.function.preprocessor.toadman"
 				}
 			],
-			"name": "meta.preprocessor.fatshark"
+			"name": "meta.preprocessor.toadman"
 		}
 	}
 }

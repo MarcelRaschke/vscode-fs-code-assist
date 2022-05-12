@@ -10,7 +10,6 @@ const buildTooltip = (target: Target) => {
 		`**Id**: \`${target.Id}\`  `,
 		`**Address**: \`${target.Ip}:${target.Port}\`  `,
 		`**Platform**: ${target.Platform}  `,
-		`**Profiler port**: ${target.ProfilerPort}  `,
 	].join("\n"));
 	return tooltip;
 };
@@ -26,7 +25,7 @@ export class TargetsNodeProvider implements vscode.TreeDataProvider<Target> {
 		treeItem.contextValue = "target";
 		treeItem.command = {
 			title: "Scan for Instances",
-			command: "fatshark-code-assist.Target.scan",
+			command: "toadman-code-assist.Target.scan",
 			arguments: [ target ],
 		};
 		return treeItem;
