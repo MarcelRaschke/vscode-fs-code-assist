@@ -194,12 +194,13 @@ export const activate = (context: vscode.ExtensionContext) => {
 				extensionOutputChannel.appendLine(`Failed to launch compile server. Check the launch command for it in the log before and see if it's correct. After fixing settings run the command toadman_code_assist.Compiler.reconnect.`);
 				extensionOutputChannel.show(false);
 				vscode.window.showInformationMessage(`Failed to launch compile server. See extension log.`);
+				return;
 			}
 
 			vscode.window.showInformationMessage(`Compiler connection established.`);
 			extensionOutputChannel.appendLine(`Compiler connected!`);
 
-			return await loopUntilConnectionDrops(existingCompilerConnection);
+			return await loopUntilConnectionDrops(childProcessConnection);
 		}
 
 		_compilerPromiseRunning = true;
