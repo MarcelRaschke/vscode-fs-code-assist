@@ -1,5 +1,5 @@
 import { ChildProcess, exec } from 'child_process';
-import { join as pathJoin } from 'path';
+import { join as pathJoin, normalize } from 'path';
 import * as vscode from 'vscode';
 import { connectionHandler, MAX_CONNECTIONS } from './connection-handler';
 import { StingrayConnection } from './stingray-connection';
@@ -12,19 +12,38 @@ import { TargetsNodeProvider } from './views/targets-node-provider';
 
 let _activeToolchain: StingrayToolchain;
 let _compilerProcess: ChildProcess | null;
+let _compilerPromiseRunning = false;
 let closed = false;
-let compilerErrored = false;
+
+export const getToolchainPath = () => {
+
+	const config = vscode.workspace.getConfiguration('Hydra');
+	const toolchainRoot: string = config.get('toolchainPath') || process.env.BsBinariesDir || 'C:/BitSquidBinaries';
+	const toolchainName: string = config.get('toolchainName') || 'vermintide2';
+
+	if (!toolchainRoot || !toolchainName) {
+		return null;
+	}
+
+	return pathJoin(toolchainRoot, toolchainName);
+};
+
 export const getActiveToolchain = () => {
 	if (_activeToolchain) {
 		return _activeToolchain;
 	}
-	const config = vscode.workspace.getConfiguration('Hydra');
-	const toolchainRoot: string = config.get('toolchainPath') || process.env.BsBinariesDir || 'C:/BitSquidBinaries';
-	const toolchainName: string = config.get('toolchainName') || 'vermintide2';
-	if (!toolchainRoot || !toolchainName) {
+	
+	const toolchainPath = getToolchainPath();
+	if (!toolchainPath) {
 		return null;
 	}
-	_activeToolchain = new StingrayToolchain(pathJoin(toolchainRoot, toolchainName));
+
+	try {
+		_activeToolchain = new StingrayToolchain(toolchainPath);
+	} catch (err) {
+		return null;
+	}
+	
 	return _activeToolchain;
 };
 
@@ -43,6 +62,36 @@ const updateIsStingrayProject = async () => {
 	vscode.commands.executeCommand('setContext', 'toadman-code-assist:isStingrayProject', bool);
 };
 
+
+const compilerConnector = async function (): Promise<StingrayConnection> {
+	return await new Promise ((resolve) => {
+		const compiler = connectionHandler.getCompiler();
+
+		if (compiler.isReady) {
+			resolve(compiler);
+			return;
+		}
+
+		let resolver = () => {
+			compiler.onDidConnect.remove(resolver);
+			compiler.onDidDisconnect.remove(resolver);
+
+			resolve(compiler);
+		};
+		compiler.onDidConnect.add(resolver);
+		compiler.onDidDisconnect.add(resolver);
+	});
+};
+
+const killChildProcess = async function(process: ChildProcess) {
+	await new Promise<boolean>((resolve) => {
+		exec(`taskkill /pid ${process.pid} /T /F`, (error) => {
+			const code = error?.code || 0;
+			resolve(code === 0);
+		});
+	});
+};
+
 export const activate = (context: vscode.ExtensionContext) => {
 	languageFeatures.activate(context);
 	taskProvider.activate(context);
@@ -52,6 +101,117 @@ export const activate = (context: vscode.ExtensionContext) => {
 	updateIsStingrayProject();
 	
 	const extensionOutputChannel = vscode.window.createOutputChannel("toadman-code-assist");
+
+	const loopUntilConnectionDrops = async (connection: StingrayConnection) => {
+		while (!closed) {
+			if (connection.isClosed) {
+				extensionOutputChannel.appendLine(`Lost connection to compile server. Retry with command toadman_code_assist.Compiler.reconnect.`);
+				extensionOutputChannel.show(false);
+				vscode.window.showInformationMessage(`Lost connection to compiler. See extension log.`);
+
+				return;
+			}
+			
+			await new Promise(f => setTimeout(f, 1000));
+		}
+	};
+
+	const keepCompilerRunning = function () {
+		async function subroutine() {
+
+			/// KILL EXISTING PROCESS IF THERE IS ONE
+
+			if (_compilerProcess) {
+				await killChildProcess(_compilerProcess);
+				_compilerProcess = null;
+			}
+
+			/// CHECK TOOLCHAIN
+
+			const toolchain = getActiveToolchain();
+
+			if (!toolchain) {
+				const toolchainPath = getToolchainPath();
+
+				if (!toolchainPath) {
+					extensionOutputChannel.appendLine(`The toolchain path is not complete. Go to the extension settings and make sure your path is correctly set.`);
+				} else {
+					extensionOutputChannel.appendLine(`No toolchain found in path "${toolchainPath}". Set a correct path in the settings.`);
+				}
+				extensionOutputChannel.appendLine(`After properly configuring the toolchain, run the command toadman_code_assist.Compiler.reconnect.`);
+				extensionOutputChannel.show(false);
+				vscode.window.showInformationMessage(`Toolchain not properly configured. See extension log.`);
+
+				return;
+			}
+
+			/// CHECK IF ANOTHER COMPILER IS RUNNING AND ATTACH TO IT. E.G. HYDRA EDITOR
+
+			const existingCompilerConnection = await compilerConnector();
+
+			if (existingCompilerConnection.isReady) {
+				vscode.window.showInformationMessage(`Compiler connection established.`);
+				extensionOutputChannel.appendLine(`Compiler connected!`);
+
+				return await loopUntilConnectionDrops(existingCompilerConnection);
+			}
+
+			const commandAndChildProcess = await toolchain.launch({
+				targetId: '00000000-1111-2222-3333-444444444444',
+				arguments: ['--asset-server'],
+			});
+
+			const command = commandAndChildProcess.command;
+			extensionOutputChannel.appendLine(`Launching compiler with command ${command}`);
+			_compilerProcess = commandAndChildProcess.childProcess;
+
+			let childProcessConnection;
+			for (let i = 0; i < 5; ++i) {
+				childProcessConnection = await compilerConnector();
+				if (childProcessConnection.isReady) {
+					break;
+				}
+				
+				if (_compilerProcess.exitCode) {
+					if (_compilerProcess.exitCode !== 0) {
+						extensionOutputChannel.appendLine(`The compiler failed to launch with exit code ${_compilerProcess.exitCode}.`);
+						_compilerProcess = null;
+						break;
+					}
+				} else {
+					extensionOutputChannel.appendLine(`Compiler still starting...`);
+				}
+
+				await new Promise(f => setTimeout(f, 1000));
+			}
+
+			if (!childProcessConnection || !childProcessConnection.isReady) {
+				if (_compilerProcess) {
+					await killChildProcess(_compilerProcess);
+					_compilerProcess = null;
+				}
+
+				extensionOutputChannel.appendLine(`Failed to launch compile server. Check the launch command for it in the log before and see if it's correct. After fixing settings run the command toadman_code_assist.Compiler.reconnect.`);
+				extensionOutputChannel.show(false);
+				vscode.window.showInformationMessage(`Failed to launch compile server. See extension log.`);
+			}
+
+			vscode.window.showInformationMessage(`Compiler connection established.`);
+			extensionOutputChannel.appendLine(`Compiler connected!`);
+
+			return await loopUntilConnectionDrops(existingCompilerConnection);
+		}
+
+		_compilerPromiseRunning = true;
+		subroutine().finally(() => {
+			_compilerPromiseRunning = false;
+
+			if (_compilerProcess) {
+				killChildProcess(_compilerProcess);
+				_compilerProcess = null;
+			}
+		});
+	};
 
 	const targetsNodeProvider = new TargetsNodeProvider();
 	context.subscriptions.push(vscode.window.createTreeView("toadman-code-assist-Targets", {
@@ -78,7 +238,11 @@ export const activate = (context: vscode.ExtensionContext) => {
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand("toadman-code-assist.Compiler.reconnect", () => {
-		compilerErrored = false;
+		if (_compilerPromiseRunning) {
+			vscode.window.showInformationMessage(`Already connected or connecting to compiler.`);
+			return;
+		}
+		keepCompilerRunning();
 	}));
 
 	const connectionsForCommand = (connection: StingrayConnection, allSelected?: StingrayConnection[]): StingrayConnection[] => {
@@ -211,99 +375,6 @@ export const activate = (context: vscode.ExtensionContext) => {
 		}
 	}));
 
-	const keepCompilerRunning = async function () {
-		let connected = false;
-		let toolchain_not_found = false;
-
-		while (!closed) {
-			await new Promise(f => setTimeout(f, 1000));
-
-			if (compilerErrored) {
-				continue;
-			}
-			
-			const toolchain = getActiveToolchain();
-
-			if (!toolchain) {
-				if (!toolchain_not_found) {
-					vscode.window.showInformationMessage(`No toolchain found.`);
-					toolchain_not_found = true;
-				}
-				continue;
-			}
-
-			toolchain_not_found = false;
-
-			const compiler = await new Promise<StingrayConnection>((resolve) => {
-
-				const compiler = connectionHandler.getCompiler();
-
-				if (compiler.isReady) {
-					resolve(compiler);
-					return;
-				}
-
-				let resolver = () => {
-					compiler.onDidConnect.remove(resolver);
-					compiler.onDidDisconnect.remove(resolver);
-
-					resolve(compiler);
-				};
-				compiler.onDidConnect.add(resolver);
-				compiler.onDidDisconnect.add(resolver);
-			});
-
-			if (compiler.isReady) {
-				if (!connected) {
-					connected = true;
-					vscode.window.showInformationMessage(`Compiler connection established.`);
-					extensionOutputChannel.appendLine(`compiler connected!`);
-				}
-				continue;
-			}
-
-			if (_compilerProcess) {
-
-				if (_compilerProcess.exitCode) {
-					if (_compilerProcess.exitCode !== 0) {
-						extensionOutputChannel.appendLine(`the compiler failed to launch with exit code ${_compilerProcess.exitCode}.`);
-						extensionOutputChannel.appendLine(`check your settings and see if the path is correct. After checking you can run the command toadman_code_assist.Compiler.reconnect.`);
-						vscode.window.showInformationMessage(`Compiler failed to launch with exit code ${_compilerProcess.exitCode}. See extension log.`);
-						compilerErrored = true;
-						continue;
-					}
-				} else {
-					extensionOutputChannel.appendLine(`compiler still starting...`);
-					continue;
-				}
-			}
-
-			if (compiler.isClosed) {
-				connected = false;
-				
-				if (_compilerProcess) {
-					const child = _compilerProcess;
-					_compilerProcess = null;
-					await new Promise<boolean>((resolve) => {
-						exec(`taskkill /pid ${child.pid} /T /F`, (error) => {
-							const code = error?.code || 0;
-							resolve(code === 0);
-						});
-					});
-				}
-				
-				const commandAndChildProcess = await toolchain.launch({
-					targetId: '00000000-1111-2222-3333-444444444444',
-					arguments: ['--asset-server'],
-				});
-
-				const command = commandAndChildProcess.command;
-				extensionOutputChannel.appendLine(`launching compiler with command ${command}`);
-				_compilerProcess = commandAndChildProcess.childProcess;
-			}
-		}
-	};
-	 
 	keepCompilerRunning();
 
 	const keepConnecting = async function () {
@@ -333,6 +404,6 @@ export const deactivate = () => {
 	closed = true;
 	connectionHandler.closeAll();
 	if (_compilerProcess) {
-		exec(`taskkill /pid ${_compilerProcess.pid} /T /F`);
+		killChildProcess(_compilerProcess);
 	}
 };
