@@ -5,6 +5,7 @@
 import * as vscode from 'vscode';
 import { StingrayConnection } from "./stingray-connection";
 import { getTimestamp } from './utils/functions';
+import Multicast from './utils/multicast';
 
 export const MAX_CONNECTIONS = 31;
 
@@ -36,6 +37,7 @@ stingray.Application.console_send({
 `;
 
 export class ConnectionHandler {
+	readonly onConnectionsChanged = new Multicast();
 	private _compiler?: StingrayConnection;
 	private _game = new Map<number, StingrayConnection>();
 	private _connectionOutputs = new Map<StingrayConnection, vscode.OutputChannel>();
@@ -64,12 +66,23 @@ export class ConnectionHandler {
 			const newGame = new StingrayConnection(port, ip);
 
 			this._addOutputChannel(`Stingray (${port})`, newGame, true);
+
+			let connected = false;
 			newGame.onDidConnect.add(() => {
 				newGame.sendJSON({
 					type: 'lua_debugger',
 					command: 'continue',
 				});
+				this.onConnectionsChanged.fire();
+				connected = true;
 			});
+
+			newGame.onDidDisconnect.add(() => {
+				if (connected) {
+					this.onConnectionsChanged.fire();
+				}
+			});
+			
 			this._game.set(port, newGame);
 			game = newGame;
 		}
@@ -86,7 +99,7 @@ export class ConnectionHandler {
 	getAllGames() {
 		const allGameConnections = [];
 		for (const [_, game] of this._game) {
-			if (!game.isClosed) {
+			if (game.isReady) {
 				allGameConnections.push(game);
 			}
 		}
@@ -98,16 +111,20 @@ export class ConnectionHandler {
 	}
 
 	_addOutputChannel(name:string, connection:StingrayConnection, show: boolean = true) {
-		let oldOutputChannel = this._outputsByName.get(name);
-		if (oldOutputChannel) {
-			oldOutputChannel.hide();
-			oldOutputChannel.dispose();
-			this._outputsByName.delete(name);
-		}
-
 		let outputChannel: vscode.OutputChannel;
 		connection.onDidConnect.add(() => {
-			outputChannel = vscode.window.createOutputChannel(name);
+			let oldOutputChannel = this._outputsByName.get(name);
+			if (oldOutputChannel) {
+				oldOutputChannel.appendLine(``);
+				oldOutputChannel.appendLine(`=======================================`);
+				oldOutputChannel.appendLine(`=============== NEW LOG ===============`);
+				oldOutputChannel.appendLine(`=======================================`);
+				oldOutputChannel.appendLine(``);
+				outputChannel = oldOutputChannel;
+			} else {
+				outputChannel = vscode.window.createOutputChannel(name);
+			}
+
 			if (show) {
 				outputChannel.show();
 			}

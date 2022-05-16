@@ -347,10 +347,6 @@ export const activate = (context: vscode.ExtensionContext) => {
 		targetsNodeProvider.refresh();
 	}));
 
-	context.subscriptions.push(vscode.commands.registerCommand("toadman-code-assist._refreshConnectedClients", () => {
-		connectionsNodeProvider.refresh();
-	}));
-
 	context.subscriptions.push(vscode.commands.registerCommand('toadman-code-assist._goToResource', async (loc) => {
 		if (!vscode.window.activeTextEditor) {
 			return;
@@ -378,6 +374,9 @@ export const activate = (context: vscode.ExtensionContext) => {
 
 	keepCompilerRunning();
 
+	connectionHandler.onConnectionsChanged.add(() => {
+		connectionsNodeProvider.refresh();
+	});
 	const keepConnecting = async function () {
 		while (!closed) {
 				

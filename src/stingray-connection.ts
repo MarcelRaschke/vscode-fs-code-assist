@@ -46,8 +46,12 @@ export class StingrayConnection {
 		this.socket.on('message', (data, isBinary) => {
 			if (!isBinary) {
 				const jsonString = data.toString('utf8').replace(/\0+$/g, '');
-				const json = JSON.parse(jsonString);
-				this.onDidReceiveData.fire(json);
+				try {
+					const json = JSON.parse(jsonString);
+					this.onDidReceiveData.fire(json);
+				} catch (err) {
+					//TODO - figure out why this happens.
+				}
 			}
 		});
 	}
