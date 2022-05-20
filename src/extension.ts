@@ -1,6 +1,7 @@
 import { ChildProcess, exec } from 'child_process';
 import { join as pathJoin, normalize } from 'path';
 import * as vscode from 'vscode';
+import { access, mkdir, readFile, writeFile } from 'fs/promises';
 import { connectionHandler, MAX_CONNECTIONS } from './connection-handler';
 import { StingrayConnection } from './stingray-connection';
 import * as languageFeatures from './stingray-language-features';
@@ -9,6 +10,7 @@ import type { Target } from './utils/stingray-config';
 import { StingrayToolchain } from "./utils/stingray-toolchain";
 import { ConnectionsNodeProvider } from './views/connections-node-provider';
 import { TargetsNodeProvider } from './views/targets-node-provider';
+import { createHmac } from 'crypto';
 
 let _activeToolchain: StingrayToolchain;
 let _compilerProcess: ChildProcess | null;
@@ -39,6 +41,37 @@ export const getActiveToolchain = () => {
 	}
 	
 	return _activeToolchain;
+};
+
+const generateAssetServerSecretKey = async (): Promise<string> => {
+	const appDataFolder: string | undefined = process.env.LOCALAPPDATA;
+
+	if (appDataFolder === undefined) {
+		throw new Error('This extension only works on Windows.');
+	}
+
+	const toadmanAppDataFolder = pathJoin(appDataFolder, "Toadman");
+
+	try {
+		await access(toadmanAppDataFolder);
+	} catch {
+		await mkdir(toadmanAppDataFolder);
+	}
+
+	const hydraAppDataFolder = pathJoin(toadmanAppDataFolder, "Hydra");
+
+	try {
+		await access(hydraAppDataFolder);
+	} catch {
+		await mkdir(hydraAppDataFolder);
+	}
+
+	const sskFile = pathJoin(hydraAppDataFolder, ".ssk");
+
+	const ssk = createHmac('sha256', 'a secret').digest('base64');
+	await writeFile(sskFile, ssk);
+
+	return ssk;
 };
 
 const updateIsStingrayProject = async () => {
@@ -150,9 +183,11 @@ export const activate = (context: vscode.ExtensionContext) => {
 				return await loopUntilConnectionDrops(existingCompilerConnection);
 			}
 
+			const secret = await generateAssetServerSecretKey();
+
 			const commandAndChildProcess = await toolchain.launch({
 				targetId: '00000000-1111-2222-3333-444444444444',
-				arguments: ['--asset-server'],
+				arguments: ['--asset-server', '--secret', secret],
 			});
 
 			const command = commandAndChildProcess.command;
