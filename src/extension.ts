@@ -15,17 +15,11 @@ let _compilerProcess: ChildProcess | null;
 let _compilerPromiseRunning = false;
 let closed = false;
 
-export const getToolchainPath = () => {
+export const getToolchainPath = (): string|null|undefined => {
 
 	const config = vscode.workspace.getConfiguration('Hydra');
-	const toolchainRoot: string = config.get('toolchainPath') || process.env.BsBinariesDir || 'C:/BitSquidBinaries';
-	const toolchainName: string = config.get('toolchainName') || 'vermintide2';
-
-	if (!toolchainRoot || !toolchainName) {
-		return null;
-	}
-
-	return pathJoin(toolchainRoot, toolchainName);
+	const binariesPath: string|null|undefined = config.get('binariesPath');
+	return binariesPath;
 };
 
 export const getActiveToolchain = () => {
