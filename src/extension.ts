@@ -132,7 +132,7 @@ export const activate = (context: vscode.ExtensionContext) => {
 	const loopUntilConnectionDrops = async (connection: StingrayConnection) => {
 		while (!closed) {
 			if (connection.isClosed) {
-				extensionOutputChannel.appendLine(`Lost connection to compile server. Retry with command toadman_code_assist.Compiler.reconnect.`);
+				extensionOutputChannel.appendLine(`Lost connection to compile server. Retry with command [command:toadman-code-assist.Compiler.reconnect].`);
 				extensionOutputChannel.show(false);
 				vscode.window.showInformationMessage(`Lost connection to compiler. See extension log.`);
 
@@ -165,7 +165,7 @@ export const activate = (context: vscode.ExtensionContext) => {
 				} else {
 					extensionOutputChannel.appendLine(`No toolchain found in path "${toolchainPath}". Set a correct path in the settings.`);
 				}
-				extensionOutputChannel.appendLine(`After properly configuring the toolchain, run the command toadman_code_assist.Compiler.reconnect.`);
+				extensionOutputChannel.appendLine(`After properly configuring the toolchain, run the command [command:toadman-code-assist.Compiler.reconnect].`);
 				extensionOutputChannel.show(false);
 				vscode.window.showInformationMessage(`Toolchain not properly configured. See extension log.`);
 
@@ -220,7 +220,7 @@ export const activate = (context: vscode.ExtensionContext) => {
 					_compilerProcess = null;
 				}
 
-				extensionOutputChannel.appendLine(`Failed to launch compile server. Check the launch command for it in the log before and see if it's correct. After fixing settings run the command toadman_code_assist.Compiler.reconnect.`);
+				extensionOutputChannel.appendLine(`Failed to launch compile server. Check the launch command for it in the log before and see if it's correct. After fixing settings run the command [command:toadman-code-assist.Compiler.reconnect].`);
 				extensionOutputChannel.show(false);
 				vscode.window.showInformationMessage(`Failed to launch compile server. See extension log.`);
 				return;

@@ -373,8 +373,10 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 	}, "(,");
 	*/
+
 	const LUA_LINK_REGEX = /@?([\w/]+\.lua)(?::(\d+))?\b/d;
 	const RESOURCE_LINK_REGEX = /\[(\w+) '([\w/]+)'\]/d;
+	const COMMAND_LINK_REGEX = /\[(command\:[\w-_]+[.\w-_]+)\]/gd;
 	context.subscriptions.push(vscode.languages.registerDocumentLinkProvider("stingray-output", {
 		provideDocumentLinks(document, _token) {
 			const links: vscode.DocumentLink[] = [];
@@ -416,6 +418,19 @@ export function activate(context: vscode.ExtensionContext) {
 					link.tooltip = 'Open externally';
 					links.push(link);
 					continue;
+				}
+
+				let commandMatch;
+				while ((commandMatch = COMMAND_LINK_REGEX.exec(text)) !== null) {
+					const index = commandMatch.index;
+					const lastIndex = COMMAND_LINK_REGEX.lastIndex;
+					const range = new vscode.Range(i, index, i, lastIndex);
+					const command = commandMatch[1];
+	
+					const commandUri = vscode.Uri.parse(command);
+					const link = new vscode.DocumentLink(range, commandUri);
+					link.tooltip = 'Run Command';
+					links.push(link);
 				}
 			}
 
