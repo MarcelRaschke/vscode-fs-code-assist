@@ -62,11 +62,11 @@ export function buildLintingErrors(settings: Settings, documentUri: string, docu
             '-', '--no-color', '--ranges', '--codes', `--filename "${uri.fsPath}"`
         ];
 
-        if (settings.linting.luaCheckConfig) {
-            args.push(`--config "${settings.linting.luaCheckConfig}"`);
+        if (settings.linting?.luaCheckConfig) {
+            args.push(`--config "${settings.linting?.luaCheckConfig}"`);
         }
 
-        args.push(...settings.linting.luaCheckArgs);
+        args.push(...settings.linting?.luaCheckArgs);
 
         return args;
     };

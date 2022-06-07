@@ -250,7 +250,7 @@ class ServiceDispatcher {
         }
 
         // If any linter settings have changed, we should be nice and re-lint.
-        if (oldLinterSettings !== null && oldLinterSettings !== this.settings.linting) {
+        if (oldLinterSettings !== null && oldLinterSettings !== this.settings?.linting) {
             relintAllDocuments = true;
         }
 
@@ -342,7 +342,7 @@ class ServiceDispatcher {
 
         let errors = await parseDocument();
 
-        if (!this.settings.linting.enabled) {
+        if (!this.settings.linting?.enabled) {
             return [];
         }
 
