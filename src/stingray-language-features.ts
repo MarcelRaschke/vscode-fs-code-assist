@@ -1,10 +1,10 @@
 import { basename } from "path";
-import * as SJSON from 'simplified-json';
-import { TextDecoder } from "util";
+import path = require("path");
 import * as vscode from "vscode";
+import {} from "vscode-languageserver";
+import { LanguageClient, LanguageClientOptions, ServerOptions, TransportKind } from "vscode-languageclient/node";
 import { activate as activateAdocAutocomplete } from './adoc-autocomplete';
 import { RawSymbolInformation, TaskRunner } from "./project-symbol-indexer";
-import { BooleanEvaluator } from "./utils/boolean-evaluator";
 import { formatCommand } from "./utils/vscode";
 
 const LANGUAGE_SELECTOR = "lua";
@@ -80,9 +80,75 @@ class StingrayLuaLanguageServer {
 	}
 }
 
+function startLanguageServer(context: vscode.ExtensionContext) {
+    const serverModule = path.join(__dirname, '../out/languageserver', 'server.js');
+
+    const debugOptions = {
+        execArgv: ['--nolazy', '--inspect=6009'], env: {
+            NODE_ENV: 'development'
+        }
+    };
+
+    const runOptions = {
+        env: {
+            NODE_ENV: 'production'
+        }
+    };
+
+    let serverOptions: ServerOptions = {
+        run: { module: serverModule, transport: TransportKind.ipc, options: runOptions },
+        debug: {
+            module: serverModule,
+            transport: TransportKind.ipc,
+            // The current version of node shipped with VSCode Insiders (as of April 3 2017) seems to have an issue with
+            // --inspect debugging, so we'll assume that someone debugging the extension has a recent version of node on
+            // on their PATH.
+            // If you do not, comment this line out and replace the --inspect above with --debug.
+            runtime: 'node',
+            options: debugOptions
+        }
+    };
+
+    const serverCommand = vscode.workspace.getConfiguration().get('lua.server.command') as string;
+    if (serverCommand) {
+        const serverArgs = vscode.workspace.getConfiguration().get('lua.server.args') as string[];
+        serverOptions = {
+            command: serverCommand, args: serverArgs
+        };
+    }
+
+    // Options to control the language client
+    const clientOptions: LanguageClientOptions = {
+        // Register the server for plain text documents
+        documentSelector: [
+            { language: 'lua', scheme: 'file' },
+            { language: 'lua', scheme: 'untitled' }
+        ],
+        synchronize: {
+            configurationSection: [
+                'lua'
+            ]
+        }
+    };
+
+    // Create the language client and start the client.
+    const languageClient = new LanguageClient('luaLanguageServer',
+        'Lua Language Server', serverOptions, clientOptions);
+
+	languageClient.start();
+
+	context.subscriptions.push({
+		dispose: () => {
+			languageClient.stop();
+		}
+	});
+}
+
 
 export function activate(context: vscode.ExtensionContext) {
 	const server = new StingrayLuaLanguageServer();
+	
+    startLanguageServer(context);
 
 	context.subscriptions.push(vscode.languages.registerDefinitionProvider(LANGUAGE_SELECTOR, {
 		async provideDefinition(document, position) {
@@ -355,24 +421,6 @@ export function activate(context: vscode.ExtensionContext) {
 			});
 		}
 	}, ":"));
-	/*
-	languages.registerSignatureHelpProvider(LANGUAGE_SELECTOR, {
-		provideSignatureHelp(document, position, token, context) {
-			const text = document.lineAt(position).text;
-			const start = text.lastIndexOf("self:", position.character);
-			if (start === -1) {
-				return null;
-			}
-			return {
-				signatures: [
-					new SignatureInformation("label", "documentation")
-				],
-				activeSignature: 0,
-				activeParameter: 0,
-			};
-		}
-	}, "(,");
-	*/
 
 	const LUA_LINK_REGEX = /@?([\w/]+\.lua)(?::(\d+))?\b/d;
 	const RESOURCE_LINK_REGEX = /\[(\w+) '([\w/]+)'\]/d;
@@ -437,36 +485,6 @@ export function activate(context: vscode.ExtensionContext) {
 			return links;
 		}
 	}));
-
-	/*
-	const SEMANTIC_TOKENS_LEGEND = {
-		tokenModifiers: [],
-		tokenTypes: [],
-	};
-	languages.registerDocumentSemanticTokensProvider(LANGUAGE_SELECTOR, {
-		provideDocumentSemanticTokens(document, token,) {
-			const builder = new SemanticTokensBuilder(SEMANTIC_TOKENS_LEGEND);
-			const regionStack: boolean[] = []; // True signals that the line should be commented out.
-
-			for (let i=0; i < document.lineCount; ++i) {
-				const line = document.lineAt(i);
-				const text = line.text;
-
-				if (IF_BEGIN_REGEX.test(text)) {
-					regionStack.push(Math.random() < 0.5);
-				} else if (IF_END_REGEX.test(text)) {
-					regionStack.pop();
-				}
-
-				if (regionStack[0]) {
-					builder.push(i, 1, text.length, token.type);
-				}
-			}
-
-			return builder.build();
-		}
-	}, SEMANTIC_TOKENS_LEGEND);
-	//*/
 }
 
 /* Putting these links here as a dirty scratchpad:

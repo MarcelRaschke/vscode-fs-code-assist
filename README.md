@@ -2,6 +2,8 @@
 
 This is a fork of Fatshark's code assist for use with Toadman's tools.
 
+Integrated the source from the vscode-lua extension https://github.com/trixnz/vscode-lua as a starting point to integrate the linter more deeply with the Toadman engine. Thank you trixnz 🙏
+
 ## Install
 Available on the Visual Studio Code Marketplace: https://marketplace.visualstudio.com/items?itemName=Toadman.toadman-code-assist
 
@@ -12,6 +14,10 @@ Make sure to define the toolchain path:
 
 To launch the game with the debugger attached, you need to setup your launch.json. Here's how:
 ![Demo](https://raw.githubusercontent.com/catdawg/vscode-fs-code-assist/master/resources/debug.gif)
+
+In order for the linter to work, make sure that luacheck (https://github.com/mpeterv/luacheck) is available in the PATH. Or specify the path in the settings.
+![Demo](https://raw.githubusercontent.com/catdawg/vscode-fs-code-assist/master/resources/luacheck.gif)
+
 
 ## Features
 + **Enhanced debugger:**

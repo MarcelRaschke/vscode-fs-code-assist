@@ -176,6 +176,104 @@
           "scope": "window",
           "default": "win32",
           "description": "Default platform name, e.g. `win32`, `xb1`, `ps4`.\nDefaults to `win32`."
+        },
+        
+        "lua.luacheckPath": {
+          "type": [
+            "string"
+          ],
+          "default": "luacheck",
+          "description": "Specifies the path to the luacheck binary (if not found on PATH).\nNote: luacheck can be invoked via a .bat or a .exe file, depending on the version you have. Make sure you specify the correct one."
+        },
+        "lua.preferLuaCheckErrors": {
+          "type": "boolean",
+          "default": false,
+          "description": "Specifies whether to prefer luacheck errors over the standard luaparse errors if luacheck is available"
+        },
+        "lua.targetVersion": {
+          "type": "string",
+          "default": "5.1",
+          "description": "Specifies the target version of Lua",
+          "enum": [
+            "5.1",
+            "5.2",
+            "5.3"
+          ]
+        },
+        "lua.format.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Specifies whether to use the Lua formatter"
+        },
+        "lua.format.lineWidth": {
+          "type": "integer",
+          "default": 120,
+          "description": "Maximum length of a line before it will be wrapped"
+        },
+        "lua.format.useTabs": {
+          "type": [
+            "null",
+            "boolean"
+          ],
+          "default": null,
+          "description": "Force the formatter to use tabs over spaces. A value of null (default) indicates that editor settings should be used."
+        },
+        "lua.format.indentCount": {
+          "type": [
+            "null",
+            "integer"
+          ],
+          "default": null,
+          "description": "Number of spaces to indent. A value of null (default) indicates that editor settings should be used."
+        },
+        "lua.format.singleQuote": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether to use single or double quotes on strings. Defaults to double quotes"
+        },
+        "lua.server.command": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null,
+          "description": "When defined, uses an external language server using the given shell command."
+        },
+        "lua.server.arguments": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "title": "arguments"
+          },
+          "default": [],
+          "description": "When lua.server.command is defined, pass as command line arguments."
+        },
+        "lua.format.linebreakMultipleAssignments": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether to split multiple assignments onto separate lines. Defaults to false"
+        },
+        "lua.linting.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Specifies whether to enable linting of source files"
+        },
+        "lua.linting.luaCheckConfig": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null,
+          "description": "Path to a .luacheckrc to be used for linting, instead of the default luacheck search path"
+        },
+        "lua.linting.luaCheckArgs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "title": "arguments"
+          },
+          "default": [],
+          "description": "Additional arguments to pass to luacheck"
         }
       }
     },
@@ -545,17 +643,28 @@
     "lint": "eslint src --ext ts"
   },
   "dependencies": {
+    "luaparse": "^0.2.1",
+    "lua-fmt": "^2.6.0",
     "simplified-json": "^0.3.0",
     "vscode-debugadapter": "^1.51.0",
     "vscode-debugprotocol": "^1.51.0",
-    "ws": "^8.5.0"
+    "vscode-languageclient": "^8.0.1",
+    "vscode-languageserver": "^8.0.1",
+    "vscode-languageserver-textdocument": "^1.0.5",
+    "vscode-uri": "^3.0.3",
+    "ws": "^8.5.0",
+    "node-dir": "^0.1.17",
+    "node-diff": "^0.2.0",
+    "source-map-support": "^0.5.21"
   },
   "devDependencies": {
     "@types/glob": "^7.1.4",
+    "@types/luaparse": "^0.2.1",
     "@types/mocha": "^9.0.0",
     "@types/node": "14.x",
     "@types/vscode": "^1.62.0",
     "@types/ws": "^8.5.3",
+    "@types/node-dir": "^0.0.34",
     "@typescript-eslint/eslint-plugin": "^5.1.0",
     "@typescript-eslint/parser": "^5.1.0",
     "@vscode/test-electron": "^1.6.2",
