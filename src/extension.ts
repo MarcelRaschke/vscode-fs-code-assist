@@ -195,7 +195,7 @@ export const activate = (context: vscode.ExtensionContext) => {
 			_compilerProcess = commandAndChildProcess.childProcess;
 
 			let childProcessConnection;
-			for (let i = 0; i < 5; ++i) {
+			for (let i = 0; i < 20; ++i) {
 				childProcessConnection = await compilerConnector();
 				if (childProcessConnection.isReady) {
 					break;
