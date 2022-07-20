@@ -1,47 +1,22 @@
 import { ChildProcess, exec } from 'child_process';
-import { join as pathJoin, normalize } from 'path';
+import { join as pathJoin } from 'path';
 import * as vscode from 'vscode';
-import { access, mkdir, readFile, writeFile } from 'fs/promises';
-import { connectionHandler, MAX_CONNECTIONS } from './connection-handler';
+import { access, mkdir, writeFile } from 'fs/promises';
+import { ConnectionHandler, connectionHandler, MAX_CONNECTIONS } from './connection-handler';
 import { StingrayConnection } from './stingray-connection';
 import * as languageFeatures from './stingray-language-features';
 import * as taskProvider from './stingray-task-provider';
+import * as statusBar from './status-bar';
 import type { Target } from './utils/stingray-config';
-import { StingrayToolchain } from "./utils/stingray-toolchain";
 import { ConnectionsNodeProvider } from './views/connections-node-provider';
 import { TargetsNodeProvider } from './views/targets-node-provider';
 import { createHmac } from 'crypto';
+import { getActiveToolchain, getToolchainPath } from './toolchain';
+import { getTimestamp } from './utils/functions';
 
-let _activeToolchain: StingrayToolchain;
 let _compilerProcess: ChildProcess | null;
 let _compilerPromiseRunning = false;
 let closed = false;
-
-export const getToolchainPath = (): string|null|undefined => {
-
-	const config = vscode.workspace.getConfiguration('Hydra');
-	const binariesPath: string|null|undefined = config.get('binariesPath');
-	return binariesPath;
-};
-
-export const getActiveToolchain = () => {
-	if (_activeToolchain) {
-		return _activeToolchain;
-	}
-	
-	const toolchainPath = getToolchainPath();
-	if (!toolchainPath) {
-		return null;
-	}
-
-	try {
-		_activeToolchain = new StingrayToolchain(toolchainPath);
-	} catch (err) {
-		return null;
-	}
-	
-	return _activeToolchain;
-};
 
 const generateAssetServerSecretKey = async (): Promise<string> => {
 	const appDataFolder: string | undefined = process.env.LOCALAPPDATA;
@@ -89,27 +64,6 @@ const updateIsStingrayProject = async () => {
 	vscode.commands.executeCommand('setContext', 'toadman-code-assist:isStingrayProject', bool);
 };
 
-
-const compilerConnector = async function (): Promise<StingrayConnection> {
-	return await new Promise ((resolve) => {
-		const compiler = connectionHandler.getCompiler();
-
-		if (compiler.isReady) {
-			resolve(compiler);
-			return;
-		}
-
-		let resolver = () => {
-			compiler.onDidConnect.remove(resolver);
-			compiler.onDidDisconnect.remove(resolver);
-
-			resolve(compiler);
-		};
-		compiler.onDidConnect.add(resolver);
-		compiler.onDidDisconnect.add(resolver);
-	});
-};
-
 const killChildProcess = async function(process: ChildProcess) {
 	await new Promise<boolean>((resolve) => {
 		exec(`taskkill /pid ${process.pid} /T /F`, (error) => {
@@ -122,26 +76,13 @@ const killChildProcess = async function(process: ChildProcess) {
 export const activate = (context: vscode.ExtensionContext) => {
 	languageFeatures.activate(context);
 	taskProvider.activate(context);
+	statusBar.activate(context);
 
 	vscode.workspace.onDidChangeWorkspaceFolders(updateIsStingrayProject);
 	vscode.workspace.onDidChangeConfiguration(updateIsStingrayProject);
 	updateIsStingrayProject();
-	
+
 	const extensionOutputChannel = vscode.window.createOutputChannel("toadman-code-assist");
-
-	const loopUntilConnectionDrops = async (connection: StingrayConnection) => {
-		while (!closed) {
-			if (connection.isClosed) {
-				extensionOutputChannel.appendLine(`Lost connection to compile server. Retry with command [command:toadman-code-assist.Compiler.reconnect].`);
-				extensionOutputChannel.show(false);
-				vscode.window.showInformationMessage(`Lost connection to compiler. See extension log.`);
-
-				return;
-			}
-			
-			await new Promise(f => setTimeout(f, 1000));
-		}
-	};
 
 	const keepCompilerRunning = function () {
 		async function subroutine() {
@@ -161,26 +102,27 @@ export const activate = (context: vscode.ExtensionContext) => {
 				const toolchainPath = getToolchainPath();
 
 				if (!toolchainPath) {
-					extensionOutputChannel.appendLine(`The toolchain path is not complete. Go to the extension settings and make sure your path is correctly set.`);
+					extensionOutputChannel.appendLine(`${getTimestamp()}  [info] The toolchain path is not complete. Go to the extension settings and make sure your path is correctly set.`);
 				} else {
-					extensionOutputChannel.appendLine(`No toolchain found in path "${toolchainPath}". Set a correct path in the settings.`);
+					extensionOutputChannel.appendLine(`${getTimestamp()}  [info] No toolchain found in path "${toolchainPath}". Set a correct path in the settings.`);
 				}
-				extensionOutputChannel.appendLine(`After properly configuring the toolchain, run the command [command:toadman-code-assist.Compiler.reconnect].`);
+				extensionOutputChannel.appendLine(`${getTimestamp()}  [info] After properly configuring the toolchain, run the command [command:toadman-code-assist.Compiler.reconnect].`);
 				extensionOutputChannel.show(false);
 				vscode.window.showInformationMessage(`Toolchain not properly configured. See extension log.`);
-
 				return;
 			}
 
 			/// CHECK IF ANOTHER COMPILER IS RUNNING AND ATTACH TO IT. E.G. HYDRA EDITOR
 
-			const existingCompilerConnection = await compilerConnector();
+			const existingCompilerConnection = await connectionHandler.connectToCompiler(1, 1000);
 
-			if (existingCompilerConnection.isReady) {
-				vscode.window.showInformationMessage(`Compiler connection established.`);
-				extensionOutputChannel.appendLine(`Compiler connected!`);
+			if (existingCompilerConnection && existingCompilerConnection.isReady) {
+				vscode.window.showInformationMessage(`Hydra compiler connection established.`);
+				extensionOutputChannel.appendLine(`${getTimestamp()}  [info] Hydra compiler connected!`);
 
-				return await loopUntilConnectionDrops(existingCompilerConnection);
+				return await new Promise(f => {
+					existingCompilerConnection.onDidDisconnect.add(f);
+				});
 			}
 
 			const secret = await generateAssetServerSecretKey();
@@ -191,45 +133,44 @@ export const activate = (context: vscode.ExtensionContext) => {
 			});
 
 			const command = commandAndChildProcess.command;
-			extensionOutputChannel.appendLine(`Launching compiler with command ${command}`);
+			extensionOutputChannel.appendLine(`${getTimestamp()}  [info] Launching Hydra compiler with command ${command}`);
 			_compilerProcess = commandAndChildProcess.childProcess;
 
-			let childProcessConnection;
-			for (let i = 0; i < 20; ++i) {
-				childProcessConnection = await compilerConnector();
-				if (childProcessConnection.isReady) {
-					break;
-				}
-				
-				if (_compilerProcess.exitCode) {
-					if (_compilerProcess.exitCode !== 0) {
-						extensionOutputChannel.appendLine(`The compiler failed to launch with exit code ${_compilerProcess.exitCode}.`);
-						_compilerProcess = null;
-						break;
-					}
-				} else {
-					extensionOutputChannel.appendLine(`Compiler still starting...`);
-				}
+			let childProcessConnection: StingrayConnection | null = null;
+			childProcessConnection = await connectionHandler.connectToCompiler(5, 1000);
 
-				await new Promise(f => setTimeout(f, 1000));
+			if (_compilerProcess.exitCode) {
+				if (_compilerProcess.exitCode !== 0) {
+					extensionOutputChannel.appendLine(`${getTimestamp()}  [info] The Hydra compiler failed to launch with exit code ${_compilerProcess.exitCode}.`);
+					_compilerProcess = null;
+				}
 			}
 
-			if (!childProcessConnection || !childProcessConnection.isReady) {
+
+			if (!childProcessConnection) {
 				if (_compilerProcess) {
 					await killChildProcess(_compilerProcess);
 					_compilerProcess = null;
 				}
 
-				extensionOutputChannel.appendLine(`Failed to launch compile server. Check the launch command for it in the log before and see if it's correct. After fixing settings run the command [command:toadman-code-assist.Compiler.reconnect].`);
+				extensionOutputChannel.appendLine(`${getTimestamp()}  [info] Failed to launch compile server. Check the launch command for it in the log before and see if it's correct. After fixing settings run the command [command:toadman-code-assist.Compiler.reconnect].`);
 				extensionOutputChannel.show(false);
 				vscode.window.showInformationMessage(`Failed to launch compile server. See extension log.`);
 				return;
 			}
 
-			vscode.window.showInformationMessage(`Compiler connection established.`);
-			extensionOutputChannel.appendLine(`Compiler connected!`);
+			vscode.window.showInformationMessage(`Hydra compiler connection established.`);
+			extensionOutputChannel.appendLine(`${getTimestamp()}  [info] Hydra compiler connected!`);
 
-			return await loopUntilConnectionDrops(childProcessConnection);
+			let connection = childProcessConnection;
+			return await new Promise<void>(f => {
+				connection.onDidDisconnect.add(() => {
+					extensionOutputChannel.appendLine(`${getTimestamp()}  [info] Lost connection to Hydra compiler. Retry with command [command:toadman-code-assist.Compiler.reconnect].`);
+					extensionOutputChannel.show(false);
+					vscode.window.showInformationMessage(`Lost connection to Hydra compiler. See extension log.`);
+					f();
+				});
+			});
 		}
 
 		_compilerPromiseRunning = true;
@@ -257,9 +198,13 @@ export const activate = (context: vscode.ExtensionContext) => {
 		showCollapseAll: false,
 		canSelectMany: true,
 	}));
+	
+	context.subscriptions.push(vscode.commands.registerCommand("toadman-code-assist.openSettings", () => {
+		vscode.commands.executeCommand('workbench.action.openSettings', '@ext:toadman.toadman-code-assist');
+	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand("toadman-code-assist.Target.scan", (target?: Target) => {
-		connectionHandler.getCompiler();
+		connectionHandler.connectToCompiler();
 
 		const isWin32 = target ? target.Platform === "win32" : true;
 		const port = isWin32 ? 14000 : target!.Port;
@@ -272,7 +217,19 @@ export const activate = (context: vscode.ExtensionContext) => {
 			vscode.window.showInformationMessage(`Already connected or connecting to compiler.`);
 			return;
 		}
-		keepCompilerRunning();
+		
+		const config = vscode.workspace.getConfiguration('Hydra');
+		const spawnOwnCompilerProcess: boolean | null | undefined = config.get('spawnOwnCompilerProcess');
+
+		if (spawnOwnCompilerProcess) {
+			keepCompilerRunning();
+		} else {
+			connectionHandler.connectToCompiler(5, 1000);
+		}
+	}));
+	
+	context.subscriptions.push(vscode.commands.registerCommand("toadman-code-assist.Compiler.openLog", () => {
+		connectionHandler.getOutputForName(ConnectionHandler.COMPILER_OUTPUT_NAME)?.show();
 	}));
 
 	const connectionsForCommand = (connection: StingrayConnection, allSelected?: StingrayConnection[]): StingrayConnection[] => {
@@ -401,14 +358,18 @@ export const activate = (context: vscode.ExtensionContext) => {
 		}
 	}));
 
-	keepCompilerRunning();
+	const config = vscode.workspace.getConfiguration('Hydra');
+	const spawnOwnCompilerProcess: boolean | null | undefined = config.get('spawnOwnCompilerProcess');
+
+	if (spawnOwnCompilerProcess) {
+		keepCompilerRunning();
+	}
 
 	connectionHandler.onConnectionsChanged.add(() => {
 		connectionsNodeProvider.refresh();
 	});
 	const keepConnecting = async function () {
 		while (!closed) {
-				
 			const toolchain = getActiveToolchain()!;
 
 			if (toolchain) {
@@ -419,7 +380,7 @@ export const activate = (context: vscode.ExtensionContext) => {
 					const port = isWin32 ? 14000 : target!.Port;
 					const maxConnections = isWin32 ? MAX_CONNECTIONS : 1;
 					connectionHandler.connectAllGames(port, maxConnections, target?.Ip);
-				} 
+				}
 			}
 
 			await new Promise(f => setTimeout(f, 1000));
@@ -427,6 +388,27 @@ export const activate = (context: vscode.ExtensionContext) => {
 	};
 
 	keepConnecting();
+
+	if (!spawnOwnCompilerProcess) {
+		const keepTryingToFindHydra = async function () {
+			while (!closed) {
+				const toolchain = getActiveToolchain()!;
+	
+				if (toolchain) {
+					const existingCompiler = connectionHandler.getCompiler();
+					if (existingCompiler.isClosed) {
+						await connectionHandler.connectToCompiler(100, 1000);
+					} else {
+						await new Promise(f => {
+							setTimeout(f, 1000);
+						});
+					}
+				}
+			}
+		};
+	
+		keepTryingToFindHydra();
+	}
 };
 
 export const deactivate = () => {

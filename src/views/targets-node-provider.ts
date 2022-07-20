@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { getActiveToolchain } from "../extension";
+import { getActiveToolchain } from "../toolchain";
 import type { Target } from "../utils/stingray-config";
 
 const buildTooltip = (target: Target) => {

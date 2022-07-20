@@ -3,7 +3,7 @@
   "displayName": "Toadman Code Assist",
   "description": "Stingray Intellisense, debugging and code browsing. A fork of Fatshark's code assist",
   "icon": "resources/toadman-code-assist.png",
-  "version": "0.6.5",
+  "version": "0.7.0",
   "publisher": "Toadman",
   "engines": {
     "vscode": "^1.63.0"
@@ -167,23 +167,26 @@
       "properties": {
         "Hydra.binariesPath": {
           "type": "string",
-          "scope": "window",
           "default": "",
           "description": "The path to the Hydra engine binaries. E.g. C:/Hydra"
         },
         "Hydra.platform": {
           "type": "string",
-          "scope": "window",
           "default": "win32",
           "description": "Default platform name, e.g. `win32`, `xb1`, `ps4`.\nDefaults to `win32`."
+        },
+        "Hydra.spawnOwnCompilerProcess": {
+          "type": "boolean",
+          "default": false,
+          "description": "(NEEDS RESTART) Check this if you want vscode to launch it's own compiler, meaning you don't have to open Hydra to run from vscode. Note that this is a bit buggy at the moment."
         },
         
         "lua.luacheckPath": {
           "type": [
             "string"
           ],
-          "default": "luacheck",
-          "description": "Specifies the path to the luacheck binary (if not found on PATH).\nNote: luacheck can be invoked via a .bat or a .exe file, depending on the version you have. Make sure you specify the correct one."
+          "default": "",
+          "description": "Specifies the path to the luacheck binary (if not found inside the toolchain).\nNote: luacheck can be invoked via a .bat or a .exe file, depending on the version you have. Make sure you specify the correct one."
         },
         "lua.preferLuaCheckErrors": {
           "type": "boolean",

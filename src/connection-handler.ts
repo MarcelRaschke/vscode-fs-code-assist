@@ -36,13 +36,45 @@ stingray.Application.console_send({
 })
 `;
 
+export enum CompilerConnectionStatus {
+	Disconnected,
+	Connecting,
+	Connected,
+}
+
 export class ConnectionHandler {
+	static readonly COMPILER_OUTPUT_NAME = "Stingray Compiler";
 	readonly onConnectionsChanged = new Multicast();
-	private _compiler?: StingrayConnection;
+	readonly onCompilerConnectionStatusChanged = new Multicast();
+	private _compiler: StingrayConnection;
+	private _compilerConnectionStatus: CompilerConnectionStatus;
 	private _game = new Map<number, StingrayConnection>();
 	private _connectionOutputs = new Map<StingrayConnection, vscode.OutputChannel>();
+	private _outputsForConnection = new Map<vscode.OutputChannel, StingrayConnection>();
 	private _identifyInfo = new Map<StingrayConnection, any>();
 	private _outputsByName = new Map<string, vscode.OutputChannel>();
+
+	constructor() {
+		const compiler = new StingrayConnection(14032);
+		this._compiler = compiler;
+
+		//can't call the private method here because typescript doesn't see the initialization of the non-nullable
+		this._compilerConnectionStatus = CompilerConnectionStatus.Connecting;
+		this.onCompilerConnectionStatusChanged.fire(CompilerConnectionStatus.Connecting);
+
+		const onDisconnect = () => {
+			compiler.onDidConnect.remove(onConnect);
+			compiler.onDidDisconnect.remove(onDisconnect);
+			this._updateCompilerConnectionStatus(CompilerConnectionStatus.Disconnected);
+		};
+		const onConnect = () => {
+			compiler.onDidConnect.remove(onConnect);
+			compiler.onDidDisconnect.remove(onDisconnect);
+			this._updateCompilerConnectionStatus(CompilerConnectionStatus.Connected);
+		};
+		this._compiler.onDidConnect.add(onConnect);
+		this._compiler.onDidDisconnect.add(onDisconnect);
+	}
 
 	closeAll() {
 		this._compiler?.close();
@@ -51,13 +83,65 @@ export class ConnectionHandler {
 		}
 	}
 
-	getCompiler() {
-		if (!this._compiler || this._compiler.isClosed) {
-			const compiler = new StingrayConnection(14032);
-			this._compiler = compiler;
-			this._addOutputChannel("Stingray Compiler", compiler, true);
+	async connectToCompiler(attempts: number = 1, delay_between_attempts: number = 1000): Promise<StingrayConnection> {
+
+		for (let i = 0; i < attempts; ++i) {
+			this._updateCompilerConnectionStatus(CompilerConnectionStatus.Connecting);
+
+			await new Promise(f => {
+				if (!this._compiler.isClosed && this._compiler.isReady) {
+					// was already connected
+					f(this._compiler);
+					return;
+				}
+
+				// check if a connection was already happening, i.e. isClosed == false and isReady == false
+				const newCompiler = this._compiler.isClosed ? new StingrayConnection(14032) : this._compiler;
+				this._compiler = newCompiler;
+
+				const onDisconnect = () => {
+					newCompiler.onDidConnect.remove(onConnect);
+					newCompiler.onDidDisconnect.remove(onDisconnect);
+					f(newCompiler);
+				};
+				const onConnect = () => {
+					newCompiler.onDidConnect.remove(onConnect);
+					newCompiler.onDidDisconnect.remove(onDisconnect);
+					f(newCompiler);
+				};
+				
+				newCompiler.onDidConnect.add(onConnect);
+				newCompiler.onDidDisconnect.add(onDisconnect);
+			});
+
+			if (!this._compiler.isClosed && this._compiler.isReady) {
+				break;
+			}
+
+			if (i + 1 !== attempts) {
+				await new Promise(f => setTimeout(f, delay_between_attempts));
+			}
+		}
+
+		if (!this._compiler.isClosed && this._compiler.isReady) {
+			this._addOutputChannel(ConnectionHandler.COMPILER_OUTPUT_NAME, this._compiler, true);
+			this._updateCompilerConnectionStatus(CompilerConnectionStatus.Connected);
+			
+			this._compiler.onDidDisconnect.add(() => {
+				this._updateCompilerConnectionStatus(CompilerConnectionStatus.Disconnected);
+			});
+		} else {
+			this._updateCompilerConnectionStatus(CompilerConnectionStatus.Disconnected);
 		}
 		return this._compiler;
+	}
+
+	getCompiler() {
+		return this._compiler;
+	}
+
+	getCompilerConnectionStatus() {
+		return this._compilerConnectionStatus;
 	}
 
 	getGame(port:number, ip?:string) {
@@ -65,10 +149,9 @@ export class ConnectionHandler {
 		if (!game || game.isClosed) {
 			const newGame = new StingrayConnection(port, ip);
 
-			this._addOutputChannel(`Stingray (${port})`, newGame, true);
-
 			let connected = false;
 			newGame.onDidConnect.add(() => {
+				this._addOutputChannel(`Stingray (${port})`, newGame, true);
 				newGame.sendJSON({
 					type: 'lua_debugger',
 					command: 'continue',
@@ -110,29 +193,48 @@ export class ConnectionHandler {
 		return this._connectionOutputs.get(connection);
 	}
 
-	_addOutputChannel(name:string, connection:StingrayConnection, show: boolean = true) {
-		let outputChannel: vscode.OutputChannel;
-		connection.onDidConnect.add(() => {
-			let oldOutputChannel = this._outputsByName.get(name);
-			if (oldOutputChannel) {
-				oldOutputChannel.appendLine(``);
-				oldOutputChannel.appendLine(`=======================================`);
-				oldOutputChannel.appendLine(`=============== NEW LOG ===============`);
-				oldOutputChannel.appendLine(`=======================================`);
-				oldOutputChannel.appendLine(``);
-				outputChannel = oldOutputChannel;
-			} else {
-				outputChannel = vscode.window.createOutputChannel(name);
-			}
+	getOutputForName(outputName:string) {
+		return this._outputsByName.get(outputName);
+	}
 
-			if (show) {
-				outputChannel.show();
-			}
-			this._connectionOutputs.set(connection, outputChannel);
-			this._outputsByName.set(name, outputChannel);
-		});
+	_updateCompilerConnectionStatus(newStatus: CompilerConnectionStatus) {
+		this._compilerConnectionStatus = newStatus;
+		this.onCompilerConnectionStatusChanged.fire(newStatus);
+	}
+
+	_addOutputChannel(name:string, connection:StingrayConnection, show: boolean = true) {
+		// connection has to already be connected
+		let outputChannel: vscode.OutputChannel;
+		
+		let oldOutputChannel = this._outputsByName.get(name);
+		let oldConnection = oldOutputChannel ? this._outputsForConnection.get(oldOutputChannel) : null;
+		
+		if (oldConnection === connection ) {
+			// output channel already created
+			return;
+		}
+
+		if (oldOutputChannel) {
+			oldOutputChannel.appendLine(``);
+			oldOutputChannel.appendLine(`${getTimestamp()}  [info] ===========================================`);
+			oldOutputChannel.appendLine(`${getTimestamp()}  [info] =================NEW LOG===================`);
+			oldOutputChannel.appendLine(`${getTimestamp()}  [info] ===========================================`);
+			oldOutputChannel.appendLine(``);
+			outputChannel = oldOutputChannel;
+		} else {
+			outputChannel = vscode.window.createOutputChannel(name);
+		}
+
+		if (show) {
+			outputChannel.show();
+		}
+		this._outputsByName.set(name, outputChannel);
+		this._connectionOutputs.set(connection, outputChannel);
+		this._outputsForConnection.set(outputChannel, connection);
+
 		connection.onDidDisconnect.add(() => {
 			this._connectionOutputs.delete(connection);
+			this._outputsForConnection.delete(outputChannel);
 			this._identifyInfo.delete(connection);
 		});
 		connection.onDidReceiveData.add((data:any) => {
@@ -144,7 +246,7 @@ export class ConnectionHandler {
 				}
 			}
 			if (data.message_type === "lua_error") { // If it is an error, print extra diagnostics.
-				outputChannel.appendLine(data.lua_callstack);
+				outputChannel.appendLine(`${getTimestamp()}  [${data.level}] ${data.lua_callstack}`);
 			}
 		});
 	}

@@ -23,7 +23,7 @@ import { buildDocumentFormatEdits, buildDocumentRangeFormatEdits } from './servi
 import { readFiles, FileNamedCallback } from 'node-dir';
 
 import * as luaparse from 'luaparse';
-import { basename } from 'path';
+import { basename, join } from 'path';
 import { URI } from 'vscode-uri';
 
 export interface FormatOptions {
@@ -232,6 +232,13 @@ class ServiceDispatcher {
         this.settings.format.singleQuote = validateSetting<boolean>(this.settings.format.singleQuote, false);
         this.settings.format.linebreakMultipleAssignments = validateSetting<boolean>(
             this.settings.format.linebreakMultipleAssignments, false);
+
+        const binariesPath = change.settings.Hydra.binariesPath;
+        let defaultLuacheckPath = "luacheck";
+        if (binariesPath) {
+            defaultLuacheckPath = join(binariesPath, "tools_external", "luacheck", "luacheck.exe");
+        }
+        this.settings.luacheckPath = validateSetting<string>(this.settings.luacheckPath !== "" ? this.settings.luacheckPath : null, defaultLuacheckPath);
 
         // Validate the version. onDidChangeConfiguration seems to be called for every keystroke the user enters,
         // so its possible that the version string will be malformed.

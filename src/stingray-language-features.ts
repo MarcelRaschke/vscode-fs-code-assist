@@ -126,7 +126,8 @@ function startLanguageServer(context: vscode.ExtensionContext) {
         ],
         synchronize: {
             configurationSection: [
-                'lua'
+                'lua',
+				'Hydra'
             ]
         }
     };

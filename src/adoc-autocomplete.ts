@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { getActiveToolchain } from './extension';
+import { getActiveToolchain } from './toolchain';
 import { formatCommand } from './utils/vscode';
 
 type AdocType = "namespace" | "function" | "constant" | "object" | "enumeration" | "enumerator";

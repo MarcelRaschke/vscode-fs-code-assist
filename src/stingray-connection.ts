@@ -32,7 +32,6 @@ export class StingrayConnection {
 		this.socket.on('close', () => {
 			this.isReady = false;
 			this.isClosed = true;
-	
 			this.onDidDisconnect.fire(this.lastError);
 		});
 		this.socket.on('open', () => {

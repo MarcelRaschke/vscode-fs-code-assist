@@ -1,11 +1,12 @@
 import { join as pathJoin, basename as pathBaseName, dirname as pathDirName } from "path";
 import * as vscode from "vscode";
 import { connectionHandler } from "./connection-handler";
-import { getActiveToolchain } from "./extension";
 import { StingrayConnection } from "./stingray-connection";
+import { getActiveToolchain } from "./toolchain";
 import { getTimestamp, uuid4 } from "./utils/functions";
 import type { Platform } from "./utils/stingray-config";
 import { StingrayToolchain } from "./utils/stingray-toolchain";
+import { applyStyle } from "./utils/text-styling";
 
 // Documentation links:
 // https://code.visualstudio.com/docs/editor/tasks
@@ -42,39 +43,16 @@ class StingrayCompileTaskTerminal implements vscode.Pseudoterminal {
 	onDidClose: vscode.Event<number> = this.closeEmitter.event;
 
 	private id: string = "<not set>";
-	private compileInProgress = false;
-	private compileQueued = false;
-	private compiler: StingrayConnection;
-	private colorize = true;
-	private fsWatchers: vscode.FileSystemWatcher[] = [];
+	private compilerClose: Function | null = null;
 
 	constructor(
 		private toolchain: StingrayToolchain,
 		private definition: StingrayTaskDefinition,
 	) {
-		this.compiler = connectionHandler.getCompiler();
-		this.onData = this.onData.bind(this);
-		this.onDisconnect = this.onDisconnect.bind(this);
-
-		this.compiler.onDidReceiveData.add(this.onData);
-		this.compiler.onDidDisconnect.add(this.onDisconnect);
 	}
 
 	open(_initialDimensions: vscode.TerminalDimensions | undefined): void {
 		this.startCompile();
-		let watch = this.definition.watch;
-		if (watch) {
-			const queueCompile = (_uri: vscode.Uri) => {
-				this.tryStartCompile(true);
-			};
-			for (const pattern of watch) {
-				const watcher = vscode.workspace.createFileSystemWatcher(pattern);
-				watcher.onDidChange(queueCompile);
-				watcher.onDidCreate(queueCompile);
-				watcher.onDidDelete(queueCompile);
-				this.fsWatchers.push(watcher);
-			}
-		}
 	}
 
 	close(): void {
@@ -82,19 +60,8 @@ class StingrayCompileTaskTerminal implements vscode.Pseudoterminal {
 	}
 
 	private doClose(code?: StatusCode) {
-		if (this.compileInProgress && this.compiler.isReady) {
-			this.compiler.sendJSON({
-				"id": this.id,
-				"type" : "cancel",
-			});
-			this.compileInProgress = false;
-		}
-		this.compiler.onDidReceiveData.remove(this.onData);
-		this.compiler.onDidDisconnect.remove(this.onData);
-
-		if (this.fsWatchers) {
-			this.fsWatchers.forEach((w) => w.dispose());
-			this.fsWatchers = [];
+		if (this.compilerClose) {
+			this.compilerClose();
 		}
 
 		if (code !== undefined) {
@@ -102,16 +69,12 @@ class StingrayCompileTaskTerminal implements vscode.Pseudoterminal {
 		}
 	}
 
-	private applyStyle(text: string, style: string) {
-		return this.colorize ? `\x1B[${style}m${text}\x1B[0m` : text;
-	}
-
 	private write(type: string, message: string) {
-		const timestamp = this.applyStyle(getTimestamp(), "2");
+		const timestamp = applyStyle(getTimestamp(), "2");
 		if (type === "StingrayCompile" || type === "compiler") {
-			message = this.applyStyle(message, "1");
+			message = applyStyle(message, "1");
 		} else if (type === "compile_progress" || type === "compile_done") {
-			message = this.applyStyle(message, "3");
+			message = applyStyle(message, "3");
 		}
 		this.writeEmitter.fire(`${timestamp}  ${message.replace(/\n/g, '\r\n')}\r\n`);
 	}
@@ -123,78 +86,79 @@ class StingrayCompileTaskTerminal implements vscode.Pseudoterminal {
 		command: "35",
 	};
 
-	private onData(data: any) {
-		if (data.type === "compiler" && data.id === this.id) {
-			if (data.start) {
-				this.write("compiler", "Compilation started.");
-				//this.compileInProgress = true; // Set when requested.
-			} else if (data.finished) {
-				this.write("compiler", "Compilation finished.");
-				this.compileInProgress = false;
-				const success = data.status === "success";
-				if (this.definition.refresh && success) {
-					vscode.commands.executeCommand('toadman-code-assist.Connection.reloadResources');
-				}
-				if (this.fsWatchers.length > 0) {
-					this.tryStartCompile();
-					this.write("compiler", "Waiting for changes...");
-				} else {
-					this.doClose(success ? StatusCode.Success : StatusCode.Error);
-				}
-			}
-		} else if (data.type === "compile_progress" && !data.done) {
-			// Note: data.file is not necessarily a file.
-			const count = data.count.toString();
-			const i = (data.i + 1).toString().padStart(count.length, " ");
-			const progress = this.applyStyle(`[progress]`, "33");
-			const file = this.applyStyle(`${data.file ?? "<unknown file>"}`, "3");
-			this.write("compile_progress", `${progress} ${i} / ${count} ${file}`);
-		} else if (data.type === "compile_progress" && data.done) {
-			this.write("compile_done", `status=${data.status}, file=${data.file}`);
-		} else if (data.type === "c") {
-			this.write("compile_done", `status=${data.status}, file=${data.file}`);
-		} else if (data.type === "message") {
-			let message = data.message;
-			if (/^Error compiling `([^`]+)`/.test(message)) {
-				// This is a hack so we can capture the error message in the same line as the file.
-				message = message.replace(/\n\n/, ": ");
-			}
-			if (data.error_context) {
-				message += `\n${data.error_context}`;
-			}
-			const level = this.applyStyle(`[${data.level}]`, StingrayCompileTaskTerminal.level2style[data.level] ?? "0");
-			if (data.system) {
-				this.write("message", `${level}[${data.system}] ${message}`);
-			} else {
-				this.write("message", `${level} ${message}`);
-			}
-		}
-	}
-
-	private onDisconnect() {
-		const compiler = this.compiler;
-		this.write("HydraCompile", `Lost connection to ${compiler.ip}:${compiler.port}.`);
-		this.doClose(StatusCode.Disconnect);
-	}
-
-	private tryStartCompile(queue: boolean = false) {
-		if (this.compileInProgress) {
-			this.compileQueued = true;
-		} else if (queue || this.compileQueued) {
-			this.compileQueued = false;
-			this.startCompile();
-		}
-	}
-
 	private async startCompile() {
-		const { toolchain, compiler, definition } = this;
+		const { toolchain, definition } = this;
 		const platform = definition.platform;
 
+		const compiler = await connectionHandler.connectToCompiler();
 		if (compiler.isClosed) {
 			this.write("HydraCompile", `Could not connect to compile server at ${compiler.ip}:${compiler.port}.`);
-			this.doClose(StatusCode.Disconnect);
+			this.doClose(StatusCode.Error);
 			return;
 		}
+
+		let compileInProgress = false;
+
+		const onData = (data: any) => {
+			if (data.type === "compiler" && data.id === this.id) {
+				if (data.start) {
+					this.write("compiler", "Compilation started.");
+					//this.compileInProgress = true; // Set when requested.
+				} else if (data.finished) {
+					this.write("compiler", "Compilation finished.");
+					const success = data.status === "success";
+					if (this.definition.refresh && success) {
+						vscode.commands.executeCommand('toadman-code-assist.Connection.reloadResources');
+					}
+					compileInProgress = false;
+					this.doClose(success ? StatusCode.Success : StatusCode.Error);
+				}
+			} else if (data.type === "compile_progress" && !data.done) {
+				// Note: data.file is not necessarily a file.
+				const count = data.count.toString();
+				const i = (data.i + 1).toString().padStart(count.length, " ");
+				const progress = applyStyle(`[progress]`, "33");
+				const file = applyStyle(`${data.file ?? "<unknown file>"}`, "3");
+				this.write("compile_progress", `${progress} ${i} / ${count} ${file}`);
+			} else if (data.type === "compile_progress" && data.done) {
+				this.write("compile_done", `status=${data.status}, file=${data.file}`);
+			} else if (data.type === "c") {
+				this.write("compile_done", `status=${data.status}, file=${data.file}`);
+			} else if (data.type === "message") {
+				let message = data.message;
+				if (/^Error compiling `([^`]+)`/.test(message)) {
+					// This is a hack so we can capture the error message in the same line as the file.
+					message = message.replace(/\n\n/, ": ");
+				}
+				if (data.error_context) {
+					message += `\n${data.error_context}`;
+				}
+				const level = applyStyle(`[${data.level}]`, StingrayCompileTaskTerminal.level2style[data.level] ?? "0");
+				if (data.system) {
+					this.write("message", `${level}[${data.system}] ${message}`);
+				} else {
+					this.write("message", `${level} ${message}`);
+				}
+			}
+		};
+		const onDisconnect = () => {
+			this.write("HydraCompile", `Lost connection to ${compiler.ip}:${compiler.port}.`);
+			this.doClose(StatusCode.Disconnect);
+		};
+		compiler.onDidReceiveData.add(onData);
+		compiler.onDidDisconnect.add(onDisconnect);
+
+		this.compilerClose = () => {
+			if (compileInProgress && compiler.isReady) {
+				compiler.sendJSON({
+					"id": this.id,
+					"type" : "cancel",
+				});
+				compileInProgress = false;
+			}
+			compiler.onDidReceiveData.remove(onData);
+			compiler.onDidDisconnect.remove(onDisconnect);
+		};
 
 		const config = await toolchain.config();
 		const currentProject = config.Projects[config.ProjectIndex];
@@ -227,9 +191,9 @@ class StingrayCompileTaskTerminal implements vscode.Pseudoterminal {
 			compileMessage["bundle-directory"] = pathJoin(currentProject.DataDirectoryBase, bundleDir);
 		}
 
-		this.compiler.sendJSON(compileMessage);
+		compileInProgress = true;
+		compiler.sendJSON(compileMessage);
 		this.write("HydraCompile", `Compilation requested with id ${this.id}.`);
-		this.compileInProgress = true;
 	}
 }
 
@@ -278,7 +242,7 @@ export const activate = (context: vscode.ExtensionContext) => {
 			});
 		},
 		// Check that the task is valid, and if it is fill out the execution field.
-		resolveTask(task: vscode.Task, _token: vscode.CancellationToken): vscode.Task | undefined {
+		async resolveTask(task: vscode.Task, _token: vscode.CancellationToken): Promise<vscode.Task | undefined> {
 			const toolchain = getActiveToolchain();
 			if (!toolchain) {
 				return undefined;
@@ -286,6 +250,11 @@ export const activate = (context: vscode.ExtensionContext) => {
 			const definition = task.definition;
 			if (definition.type !== TASK_SOURCE) {
 				return undefined; // Invalid task definition.
+			}
+			
+			const compiler = await connectionHandler.connectToCompiler();
+			if (!compiler) {
+				return undefined;
 			}
 			return new vscode.Task(
 				definition, // Must be unchanged according to the docs.
@@ -297,17 +266,4 @@ export const activate = (context: vscode.ExtensionContext) => {
 			);
 		},
 	}));
-};
-
-export const compileForPlatform = async (toolchain: StingrayToolchain, platform: Platform) => {
-	const task = createDefaultTask(toolchain, platform);
-	const taskExecution = await vscode.tasks.executeTask(task);
-	return new Promise<boolean>((resolve) => {
-		const disposable = vscode.tasks.onDidEndTaskProcess((taskEndEvent) => {
-			if (taskEndEvent.execution === taskExecution) {
-				disposable.dispose();
-				resolve(taskEndEvent.exitCode === StatusCode.Success);
-			}
-		});
-	});
 };
