@@ -403,6 +403,10 @@ export const activate = (context: vscode.ExtensionContext) => {
 							setTimeout(f, 1000);
 						});
 					}
+				} else {
+					await new Promise(f => {
+						setTimeout(f, 1000);
+					});
 				}
 			}
 		};
