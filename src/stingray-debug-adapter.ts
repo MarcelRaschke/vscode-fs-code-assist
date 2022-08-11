@@ -119,6 +119,8 @@ class StingrayDebugSession extends DebugAdapter.DebugSession {
 
 	stingrayConsolePort?: number;
 
+	noDebug: boolean = false;
+
 	// Debugging the debugger.
 	loggingEnabled = !!process.env.TOADMAN_CODE_ASSIST_DEBUG_MODE;
 
@@ -393,6 +395,7 @@ class StingrayDebugSession extends DebugAdapter.DebugSession {
 
 	protected async launchRequest(response: DebugProtocol.LaunchResponse, args: StingrayLaunchRequestArguments) {
 		this.loggingEnabled = args.loggingEnabled ?? this.loggingEnabled;
+		this.noDebug = args.noDebug? true : false;
 
 		let toolchain: StingrayToolchain;
 		try {
@@ -408,8 +411,11 @@ class StingrayDebugSession extends DebugAdapter.DebugSession {
 
 		const launchArguments: string[] = [];
 		launchArguments.push(compile);
-		launchArguments.push('--wait-for-debugger');
-		launchArguments.push(`${timeout}`);
+
+		if (!this.noDebug) {
+			launchArguments.push('--wait-for-debugger');
+			launchArguments.push(`${timeout}`);
+		}
 
 		const extraArgumentsSplit = args.arguments?.split(" ");
 
@@ -431,38 +437,42 @@ class StingrayDebugSession extends DebugAdapter.DebugSession {
 			this.sendErrorResponse(response, 1000, 'Error launching the instance');
 		});
 
-		let timeoutId: NodeJS.Timeout;
-		timeoutId = setTimeout(() => {
-			this.killChild();
-			this.sendErrorResponse(response, 1000, 'Timed out waiting for port');
-		}, timeout*1000);
+		if (!this.noDebug) {
+			let timeoutId: NodeJS.Timeout;
+			timeoutId = setTimeout(() => {
+				this.killChild();
+				this.sendErrorResponse(response, 1000, 'Timed out waiting for port');
+			}, timeout*1000);
 
-		// Find console server port in the process standard output.
-		let port = 0;
-		const rl = readline.createInterface({
-			input: child.stdout!,
-			crlfDelay: Infinity,
-		});
-		for await (const line of rl) {
-			const match = /Started console server \((\d+)\)/.exec(line);
-			if (match) {
-				port = parseInt(match[1], 10);
-				break;
+			// Find console server port in the process standard output.
+			let port = 0;
+			const rl = readline.createInterface({
+				input: child.stdout!,
+				crlfDelay: Infinity,
+			});
+			for await (const line of rl) {
+				const match = /Started console server \((\d+)\)/.exec(line);
+				if (match) {
+					port = parseInt(match[1], 10);
+					break;
+				}
 			}
-		}
-		if (timeoutId) {
-			clearTimeout(timeoutId);
-		}
-		// Close streams to not block the child.
-		rl.close();
-		child.stdout!.destroy();
+			if (timeoutId) {
+				clearTimeout(timeoutId);
+			}
+			// Close streams to not block the child.
+			rl.close();
+			child.stdout!.destroy();
 
-		const connectResult = this.connect(toolchain, 'localhost', port);
-		connectResult.then(() => {
+			const connectResult = this.connect(toolchain, 'localhost', port);
+			connectResult.then(() => {
+				this.sendResponse(response);
+			}).catch((err) => {
+				this.sendErrorResponse(response, 1000, err.toString());
+			});
+		} else {
 			this.sendResponse(response);
-		}).catch((err) => {
-			this.sendErrorResponse(response, 1000, err.toString());
-		});
+		}
 	}
 
 	protected async evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments): Promise<void> {

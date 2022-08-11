@@ -4,6 +4,9 @@ import { SymbolInformation, Location, SymbolKind } from 'vscode-languageserver';
 export function buildDocumentSymbols(uri: string, analysis: Analysis): SymbolInformation[] {
     const symbols: SymbolInformation[] = [];
 
+    if (!analysis) {
+        return symbols;
+    }
     for (const symbol of analysis.symbols.filter(sym => sym.isGlobalScope)) {
         // Populate the document's functions:
         if (symbol.kind === 'Function') {

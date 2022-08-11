@@ -117,7 +117,6 @@ export const activate = (context: vscode.ExtensionContext) => {
 			const existingCompilerConnection = await connectionHandler.connectToCompiler(1, 1000);
 
 			if (existingCompilerConnection && existingCompilerConnection.isReady) {
-				vscode.window.showInformationMessage(`Hydra compiler connection established.`);
 				extensionOutputChannel.appendLine(`${getTimestamp()}  [info] Hydra compiler connected!`);
 
 				return await new Promise(f => {
@@ -159,7 +158,6 @@ export const activate = (context: vscode.ExtensionContext) => {
 				return;
 			}
 
-			vscode.window.showInformationMessage(`Hydra compiler connection established.`);
 			extensionOutputChannel.appendLine(`${getTimestamp()}  [info] Hydra compiler connected!`);
 
 			let connection = childProcessConnection;

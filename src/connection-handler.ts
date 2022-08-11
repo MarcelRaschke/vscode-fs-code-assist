@@ -31,6 +31,7 @@ stingray.Application.console_send({
 		session_id = GET(Application, "session_id"),
 		platform = GET(Application, "platform"),
 		time_since_launch = GET(Application, "time_since_launch"),
+		title = GET(Window, "title", "Hydra instance"),
 		jit = { GET(jit, "status") } ,
 	},
 })
@@ -252,9 +253,9 @@ export class ConnectionHandler {
 	}
 
 	async identify(connection: StingrayConnection): Promise<any | null> {
-		const info = this._identifyInfo.get(connection);
-		if (info) {
-			return info;
+		const existingInfo = this._identifyInfo.get(connection);
+		if (existingInfo) {
+			return existingInfo;
 		}
 
 		let onData: (data: any) => void;
@@ -271,12 +272,15 @@ export class ConnectionHandler {
 
 		connection.sendLua(IDENTIFY_LUA);
 
-		return identifyResult.then((info) => {
-			this._identifyInfo.set(connection, info);
-		}).finally(() => {
+		const info = await identifyResult.finally(() => {
 			connection.onDidReceiveData.remove(onData);
 			clearTimeout(timeoutId);
 		});
+		
+		if (info) {
+			this._identifyInfo.set(connection, info);
+		}
+		return info;
 	}
 }
 

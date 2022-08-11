@@ -3,7 +3,7 @@
   "displayName": "Toadman Code Assist",
   "description": "Stingray Intellisense, debugging and code browsing. A fork of Fatshark's code assist",
   "icon": "resources/toadman-code-assist.png",
-  "version": "0.7.1",
+  "version": "0.7.2",
   "publisher": "Toadman",
   "engines": {
     "vscode": "^1.63.0"
@@ -30,13 +30,7 @@
     "sjson"
   ],
   "activationEvents": [
-    "onCommand:toadman-code-assist.Target.scan",
-    "onCommand:toadman-code-assist.Connection.attachDebugger",
-    "workspaceContains:settings.ini",
-    "onUri",
-    "onLanguage:lua",
-    "onLanguage:sjson",
-    "onTaskType:hydra"
+    "workspaceContains:*.stingray_project"
   ],
   "main": "./out/extension.js",
   "contributes": {
