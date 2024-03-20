@@ -26,7 +26,7 @@ type StingrayLaunchRequestArguments = DebugProtocol.LaunchRequestArguments & {
 	toolchain: string;
 	/** Enable debug prints for the adapter itself. */
 	loggingEnabled?: boolean;
-	/** ID of the target. Defaults to localhost. */
+	/** ID of the target. Defaults to 127.0.0.1. */
 	targetId: string;
 	/** Abort the launch if it takes longer than this to attach (seconds). */
 	timeout?: number;
@@ -371,7 +371,7 @@ class StingrayDebugSession extends DebugAdapter.DebugSession {
 			return;
 		}
 
-		const connectResult = this.connect(toolchain, args.ip ?? 'localhost', args.port);
+		const connectResult = this.connect(toolchain, args.ip ?? '127.0.0.1', args.port);
 		connectResult.then(() => {
 			this.sendResponse(response);
 		}).catch((err) => {
@@ -414,7 +414,6 @@ class StingrayDebugSession extends DebugAdapter.DebugSession {
 
 		if (!this.noDebug) {
 			launchArguments.push('--wait-for-debugger');
-			launchArguments.push(`${timeout}`);
 		}
 
 		const extraArgumentsSplit = args.arguments?.split(" ");
@@ -464,8 +463,13 @@ class StingrayDebugSession extends DebugAdapter.DebugSession {
 			rl.close();
 			child.stdout!.destroy();
 
-			const connectResult = this.connect(toolchain, 'localhost', port);
-			connectResult.then(() => {
+			const connectResult = this.connect(toolchain, '127.0.0.1', port);
+			connectResult.then((connection) => {
+				// this is what unblocks --wait-for-debugger in the engine.
+				connection.sendJSON({
+					type: 'lua_debugger',
+					command: 'continue',
+				});
 				this.sendResponse(response);
 			}).catch((err) => {
 				this.sendErrorResponse(response, 1000, err.toString());

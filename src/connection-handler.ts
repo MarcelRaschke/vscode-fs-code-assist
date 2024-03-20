@@ -153,10 +153,6 @@ export class ConnectionHandler {
 			let connected = false;
 			newGame.onDidConnect.add(() => {
 				this._addOutputChannel(`Stingray (${port})`, newGame, true);
-				newGame.sendJSON({
-					type: 'lua_debugger',
-					command: 'continue',
-				});
 				this.onConnectionsChanged.fire();
 				connected = true;
 			});

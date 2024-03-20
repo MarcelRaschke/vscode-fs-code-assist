@@ -3,7 +3,7 @@
   "displayName": "Toadman Code Assist",
   "description": "Stingray Intellisense, debugging and code browsing. A fork of Fatshark's code assist",
   "icon": "resources/toadman-code-assist.png",
-  "version": "0.7.2",
+  "version": "0.7.3",
   "publisher": "Toadman",
   "engines": {
     "vscode": "^1.63.0"
@@ -440,7 +440,7 @@
               "type": "hydra",
               "request": "attach",
               "toolchain": "^\"\\${config:Hydra.binariesPath}\"",
-              "ip": "{3:localhost}",
+              "ip": "{3:127.0.0.1}",
               "port": "${4:14000}",
               "name": "${5:Attach to ${3}:${4}}"
             }
