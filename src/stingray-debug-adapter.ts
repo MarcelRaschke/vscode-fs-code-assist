@@ -26,12 +26,14 @@ type StingrayLaunchRequestArguments = DebugProtocol.LaunchRequestArguments & {
 	toolchain: string;
 	/** Enable debug prints for the adapter itself. */
 	loggingEnabled?: boolean;
-	/** ID of the target. Defaults to localhost. */
-	targetId: string;
+	/** ID of the target registered in Hydra, defaults to "00000000-1111-2222-3333-444444444444" */
+	targetId?: string;
 	/** Abort the launch if it takes longer than this to attach (seconds). */
 	timeout?: number;
 	/** Extra arguments. */
 	arguments?: string;
+	/** override the Exe used to launch the engine. */
+	overrideExe?: string;
 	/** Compile in the same process before launching. */
 	compile: boolean;
 };
@@ -371,7 +373,7 @@ class StingrayDebugSession extends DebugAdapter.DebugSession {
 			return;
 		}
 
-		const connectResult = this.connect(toolchain, args.ip ?? 'localhost', args.port);
+		const connectResult = this.connect(toolchain, args.ip ?? '127.0.0.1', args.port);
 		connectResult.then(() => {
 			this.sendResponse(response);
 		}).catch((err) => {
@@ -414,7 +416,6 @@ class StingrayDebugSession extends DebugAdapter.DebugSession {
 
 		if (!this.noDebug) {
 			launchArguments.push('--wait-for-debugger');
-			launchArguments.push(`${timeout}`);
 		}
 
 		const extraArgumentsSplit = args.arguments?.split(" ");
@@ -423,9 +424,12 @@ class StingrayDebugSession extends DebugAdapter.DebugSession {
 			launchArguments.push(...extraArgumentsSplit);
 		}
 
+		const overrideExe = args.overrideExe;
+
 		const commandAndChildProcess = await toolchain.launch({
 			targetId: args.targetId ?? '00000000-1111-2222-3333-444444444444',
 			arguments: launchArguments,
+			overrideExe: overrideExe
 		});
 		
 		this.sendEvent(new DebugAdapter.OutputEvent(`launching with command ${commandAndChildProcess.command}\r\n`, 'console'));
@@ -464,8 +468,13 @@ class StingrayDebugSession extends DebugAdapter.DebugSession {
 			rl.close();
 			child.stdout!.destroy();
 
-			const connectResult = this.connect(toolchain, 'localhost', port);
-			connectResult.then(() => {
+			const connectResult = this.connect(toolchain, '127.0.0.1', port);
+			connectResult.then((connection) => {
+				// this is what unblocks --wait-for-debugger in the engine.
+				connection.sendJSON({
+					type: 'lua_debugger',
+					command: 'continue',
+				});
 				this.sendResponse(response);
 			}).catch((err) => {
 				this.sendErrorResponse(response, 1000, err.toString());
