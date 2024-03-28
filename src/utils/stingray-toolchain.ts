@@ -11,6 +11,8 @@ type LaunchOptions = {
 	targetId: string;
 	/** Extra arguments to the Stingray process */
 	arguments?: string[];
+	/** override the Exe used to launch the engine. */
+	overrideExe?: string;
 };
 
 /**
@@ -77,7 +79,11 @@ export class StingrayToolchain {
 		}
 		const platformDirectory = 'win64';
 
-		const engineExe = path.join(this.path, 'engine', platformDirectory, config.Build, StingrayToolchain.buildToExecutableName[config.Build]);
+		const engineExe = 
+			options.overrideExe ? 
+					options.overrideExe :
+			 		path.join(this.path, 'engine', platformDirectory, config.Build, StingrayToolchain.buildToExecutableName[config.Build]);
+
 		const engineArguments = [];
 		
 		engineArguments.push('--toolchain');

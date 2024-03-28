@@ -3,7 +3,7 @@
   "displayName": "Toadman Code Assist",
   "description": "Stingray Intellisense, debugging and code browsing. A fork of Fatshark's code assist",
   "icon": "resources/toadman-code-assist.png",
-  "version": "0.7.3",
+  "version": "0.8.0",
   "publisher": "Toadman",
   "engines": {
     "vscode": "^1.63.0"
@@ -478,6 +478,11 @@
                 "type": "string",
                 "description": "The absolute path to the toolchain.",
                 "default": "^\"\\${config:Hydra.binariesPath}\""
+              },
+              "loggingEnabled": {
+                "type": "boolean",
+                "description": "Enable debug prints for the VSCode Debug Adapter itself.",
+                "default": false
               }
             }
           },
@@ -504,6 +509,25 @@
               "detach": {
                 "type": "boolean",
                 "description": "If true, the game will stay open after the debugger disconnects.",
+                "default": false
+              },
+              "overrideExe": {
+                "type": "string",
+                "description": "Override the Exe used to launch the engine"
+              },
+              "compile": {
+                "type": "boolean",
+                "description": "Compile in the same process before launching.",
+                "default": true
+              },
+              "targetId": {
+                "type": "string",
+                "description": "ID of the target registered in Hydra, defaults to \"00000000-1111-2222-3333-444444444444\"",
+                "default": "00000000-1111-2222-3333-444444444444"
+              },
+              "loggingEnabled": {
+                "type": "boolean",
+                "description": "Enable debug prints for the VSCode Debug Adapter itself.",
                 "default": false
               }
             }

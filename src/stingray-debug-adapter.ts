@@ -26,12 +26,14 @@ type StingrayLaunchRequestArguments = DebugProtocol.LaunchRequestArguments & {
 	toolchain: string;
 	/** Enable debug prints for the adapter itself. */
 	loggingEnabled?: boolean;
-	/** ID of the target. Defaults to 127.0.0.1. */
-	targetId: string;
+	/** ID of the target registered in Hydra, defaults to "00000000-1111-2222-3333-444444444444" */
+	targetId?: string;
 	/** Abort the launch if it takes longer than this to attach (seconds). */
 	timeout?: number;
 	/** Extra arguments. */
 	arguments?: string;
+	/** override the Exe used to launch the engine. */
+	overrideExe?: string;
 	/** Compile in the same process before launching. */
 	compile: boolean;
 };
@@ -422,9 +424,12 @@ class StingrayDebugSession extends DebugAdapter.DebugSession {
 			launchArguments.push(...extraArgumentsSplit);
 		}
 
+		const overrideExe = args.overrideExe;
+
 		const commandAndChildProcess = await toolchain.launch({
 			targetId: args.targetId ?? '00000000-1111-2222-3333-444444444444',
 			arguments: launchArguments,
+			overrideExe: overrideExe
 		});
 		
 		this.sendEvent(new DebugAdapter.OutputEvent(`launching with command ${commandAndChildProcess.command}\r\n`, 'console'));
